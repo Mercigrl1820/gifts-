@@ -42,7 +42,7 @@ export default function Home() {
   const [extraNotes, setExtraNotes] = useState("");
 
   // Amazon associate tag – user should replace this
-  const AMAZON_TAG = 23180ab-20; // ← CHANGE THIS to your Amazon Associates tag
+  const AMAZON_TAG =23180ab-20; // ← CHANGE THIS to your Amazon Associates tag
 
   useEffect(() => {
     setSavedProfiles(getSavedProfiles());
