@@ -5,7 +5,7 @@ import { Gift, Sparkles, User, Heart, ArrowRight, ArrowLeft, Loader2, ExternalLi
 import Link from "next/link";
 import { GiftIdea, RecipientProfile, Occasion, Relationship } from "@/types";
 import { getSavedProfiles, saveProfile, deleteProfile } from "@/lib/storage";
-
+import Script from "next/script";
 const OCCASIONS: Occasion[] = [
   "Birthday", "Anniversary", "Christmas", "Valentine's Day",
   "Mother's Day", "Father's Day", "Wedding", "Graduation",
@@ -204,7 +204,18 @@ export default function Home() {
               Or use a saved profile
             </button>
           )}
-
+{/* Stripe Pricing Table */}
+<div className="mt-12 px-4">
+  <h2 className="text-xl font-semibold text-center mb-4">Upgrade to Pro</h2>
+  <Script
+    async
+    src="https://js.stripe.com/v3/pricing-table.js"
+  />
+  <stripe-pricing-table
+    pricing-table-id="prctbl_1UXXKEIAYv4F4L27F0BTqq2f"
+    publishable-key="pk_live_51UXPJjIAYv4F4L270jGtNXObsHUurmwCi94JsfZ3kjVQWlvZiGyKqpCeW24PeReLTqXm4vA8OZ7L7qLQRGxPHxCU00WsbwFrBr"
+  />
+</div>
           <footer className="mt-16 text-center text-xs text-gray-400 space-y-2">
             <p>As an Amazon Associate I earn from qualifying purchases.</p>
             <p>
