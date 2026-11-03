@@ -29,7 +29,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [ideas, setIdeas] = useState<GiftIdea[]>([]);
   const [savedProfiles, setSavedProfiles] = useState<RecipientProfile[]>([]);
-
+const [showPricing, setShowPricing] = useState(false);
   // Form state
   const [recipientName, setRecipientName] = useState("");
   const [occasion, setOccasion] = useState<Occasion | "">("");
