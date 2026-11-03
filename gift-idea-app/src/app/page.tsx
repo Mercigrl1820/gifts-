@@ -6,7 +6,7 @@ import { Gift, Sparkles, User, Heart, ArrowRight, ArrowLeft, Loader2, ExternalLi
 import Link from "next/link";
 import { GiftIdea, RecipientProfile, Occasion, Relationship } from "@/types";
 import { getSavedProfiles, saveProfile, deleteProfile } from "@/lib/storage";
-import Script from "next/script";
+
 const OCCASIONS: Occasion[] = [
   "Birthday", "Anniversary", "Christmas", "Valentine's Day",
   "Mother's Day", "Father's Day", "Wedding", "Graduation",
@@ -30,7 +30,8 @@ export default function Home() {
   const [error, setError] = useState("");
   const [ideas, setIdeas] = useState<GiftIdea[]>([]);
   const [savedProfiles, setSavedProfiles] = useState<RecipientProfile[]>([]);
-const [showPricing, setShowPricing] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
+
   // Form state
   const [recipientName, setRecipientName] = useState("");
   const [occasion, setOccasion] = useState<Occasion | "">("");
@@ -42,8 +43,8 @@ const [showPricing, setShowPricing] = useState(false);
   const [avoid, setAvoid] = useState("");
   const [extraNotes, setExtraNotes] = useState("");
 
-  // Amazon associate tag – user should replace this
-  const AMAZON_TAG = "23180ab-20"; // ← CHANGE THIS to your Amazon Associates tag
+  // Amazon associate tag
+  const AMAZON_TAG = "23180ab-20";
 
   useEffect(() => {
     setSavedProfiles(getSavedProfiles());
@@ -179,9 +180,11 @@ const [showPricing, setShowPricing] = useState(false);
           <div className="w-16 h-16 rounded-2xl bg-violet-100 flex items-center justify-center mb-6">
             <Sparkles className="w-8 h-8 text-violet-600" />
           </div>
+
           <h1 className="text-3xl font-bold text-center mb-3 leading-tight">
             Find the perfect gift in minutes
           </h1>
+
           <p className="text-center text-gray-600 mb-10 leading-relaxed">
             Answer a few questions about the person you’re shopping for and get thoughtful, personalized ideas — not generic lists.
           </p>
@@ -205,18 +208,40 @@ const [showPricing, setShowPricing] = useState(false);
               Or use a saved profile
             </button>
           )}
-{/* Stripe Pricing Table */}
-<div className="mt-12 px-4">
-  <h2 className="text-xl font-semibold text-center mb-4">Upgrade to Pro</h2>
-  <Script
-    async
-    src="https://js.stripe.com/v3/pricing-table.js"
-  />
-  <stripe-pricing-table
-    pricing-table-id="prctbl_1UXXKEIAYv4F4L27F0BTqq2f"
-    publishable-key="pk_live_51UXPJjIAYv4F4L270jGtNXObsHUurmwCi94JsfZ3kjVQWlvZiGyKqpCeW24PeReLTqXm4vA8OZ7L7qLQRGxPHxCU00WsbwFrBr"
-  />
-</div>
+
+          {/* Upgrade Button */}
+          <div className="mt-10 text-center px-4">
+            <button
+              onClick={() => setShowPricing(true)}
+              className="bg-violet-600 hover:bg-violet-700 text-white font-semibold py-3 px-8 rounded-2xl shadow-md transition"
+            >
+              Upgrade to Pro – Unlimited Profiles
+            </button>
+          </div>
+
+          {/* Pricing Table Modal */}
+          {showPricing && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 relative">
+                <button
+                  onClick={() => setShowPricing(false)}
+                  className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl leading-none"
+                >
+                  ×
+                </button>
+
+                <h2 className="text-xl font-bold text-center mb-4">Upgrade to Pro</h2>
+
+                <Script async src="https://js.stripe.com/v3/pricing-table.js" />
+
+                {React.createElement("stripe-pricing-table", {
+                  "pricing-table-id": "prctbl_1UXXKEIAYv4F4L27F0BTqq2f",
+                  "publishable-key": "pk_live_51UXPJjIAYv4F4L270jGtNXObsHUurmwCi94JsfZ3kjVQWlvZiGyKqpCeW24PeReLTqXm4vA8OZ7L7qLQRGxPHxCU00WsbwFrBr",
+                })}
+              </div>
+            </div>
+          )}
+
           <footer className="mt-16 text-center text-xs text-gray-400 space-y-2">
             <p>As an Amazon Associate I earn from qualifying purchases.</p>
             <p>
@@ -249,10 +274,7 @@ const [showPricing, setShowPricing] = useState(false);
                 key={p.id}
                 className="bg-white border rounded-2xl p-4 flex items-start justify-between gap-3 shadow-sm"
               >
-                <button
-                  onClick={() => loadProfile(p)}
-                  className="text-left flex-1"
-                >
+                <button onClick={() => loadProfile(p)} className="text-left flex-1">
                   <div className="font-semibold">{p.name}</div>
                   <div className="text-sm text-gray-500 mt-0.5">
                     {p.relationship} · {p.occasion}
@@ -288,7 +310,6 @@ const [showPricing, setShowPricing] = useState(false);
         </header>
 
         <div className="p-4 space-y-5">
-          {/* Name */}
           <div>
             <label className="block text-sm font-medium mb-1.5">
               Recipient’s name <span className="text-gray-400">(optional but recommended)</span>
@@ -302,7 +323,6 @@ const [showPricing, setShowPricing] = useState(false);
             />
           </div>
 
-          {/* Occasion */}
           <div>
             <label className="block text-sm font-medium mb-1.5">
               Occasion <span className="text-red-500">*</span>
@@ -319,7 +339,6 @@ const [showPricing, setShowPricing] = useState(false);
             </select>
           </div>
 
-          {/* Relationship */}
           <div>
             <label className="block text-sm font-medium mb-1.5">
               Relationship <span className="text-red-500">*</span>
@@ -336,7 +355,6 @@ const [showPricing, setShowPricing] = useState(false);
             </select>
           </div>
 
-          {/* Age */}
           <div>
             <label className="block text-sm font-medium mb-1.5">Age range</label>
             <select
@@ -351,11 +369,8 @@ const [showPricing, setShowPricing] = useState(false);
             </select>
           </div>
 
-          {/* Interests */}
           <div>
-            <label className="block text-sm font-medium mb-1.5">
-              Interests & hobbies
-            </label>
+            <label className="block text-sm font-medium mb-1.5">Interests & hobbies</label>
             <textarea
               value={interests}
               onChange={(e) => setInterests(e.target.value)}
@@ -365,11 +380,8 @@ const [showPricing, setShowPricing] = useState(false);
             />
           </div>
 
-          {/* Personality */}
           <div>
-            <label className="block text-sm font-medium mb-1.5">
-              Personality / vibe
-            </label>
+            <label className="block text-sm font-medium mb-1.5">Personality / vibe</label>
             <textarea
               value={personality}
               onChange={(e) => setPersonality(e.target.value)}
@@ -379,7 +391,6 @@ const [showPricing, setShowPricing] = useState(false);
             />
           </div>
 
-          {/* Budget */}
           <div>
             <label className="block text-sm font-medium mb-1.5">Budget</label>
             <select
@@ -394,11 +405,8 @@ const [showPricing, setShowPricing] = useState(false);
             </select>
           </div>
 
-          {/* Avoid */}
           <div>
-            <label className="block text-sm font-medium mb-1.5">
-              Things to avoid
-            </label>
+            <label className="block text-sm font-medium mb-1.5">Things to avoid</label>
             <input
               type="text"
               value={avoid}
@@ -408,11 +416,8 @@ const [showPricing, setShowPricing] = useState(false);
             />
           </div>
 
-          {/* Extra notes */}
           <div>
-            <label className="block text-sm font-medium mb-1.5">
-              Anything else?
-            </label>
+            <label className="block text-sm font-medium mb-1.5">Anything else?</label>
             <textarea
               value={extraNotes}
               onChange={(e) => setExtraNotes(e.target.value)}
@@ -429,7 +434,6 @@ const [showPricing, setShowPricing] = useState(false);
           )}
         </div>
 
-        {/* Fixed bottom button */}
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t max-w-lg mx-auto">
           <button
             onClick={handleGenerate}
@@ -480,14 +484,9 @@ const [showPricing, setShowPricing] = useState(false);
 
         <div className="space-y-4">
           {ideas.map((idea, idx) => (
-            <div
-              key={idx}
-              className="bg-white border rounded-2xl p-5 shadow-sm"
-            >
+            <div key={idx} className="bg-white border rounded-2xl p-5 shadow-sm">
               <div className="flex items-start justify-between gap-3 mb-2">
-                <h3 className="font-semibold text-lg leading-snug">
-                  {idea.title}
-                </h3>
+                <h3 className="font-semibold text-lg leading-snug">{idea.title}</h3>
                 <span className="text-xs font-medium bg-violet-50 text-violet-700 px-2 py-1 rounded-full whitespace-nowrap">
                   {idea.estimatedPrice}
                 </span>
@@ -500,9 +499,7 @@ const [showPricing, setShowPricing] = useState(false);
                   <Heart className="w-3.5 h-3.5" />
                   Why this fits
                 </div>
-                <p className="text-sm text-violet-900 leading-relaxed">
-                  {idea.whyItFits}
-                </p>
+                <p className="text-sm text-violet-900 leading-relaxed">{idea.whyItFits}</p>
               </div>
 
               <a
