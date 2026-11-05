@@ -19,7 +19,6 @@ const RELATIONSHIPS: Relationship[] = [
 ];
 
 const AGE_RANGES = ["Under 18", "18-24", "25-34", "35-44", "45-54", "55-64", "65+", "Prefer not to say"];
-
 const BUDGETS = ["Under $25", "$25 – $50", "$50 – $100", "$100 – $200", "$200+", "No limit / Flexible"];
 
 type Step = "home" | "form" | "results" | "profiles";
@@ -32,7 +31,6 @@ export default function Home() {
   const [savedProfiles, setSavedProfiles] = useState<RecipientProfile[]>([]);
   const [showPricing, setShowPricing] = useState(false);
 
-  // Form state
   const [recipientName, setRecipientName] = useState("");
   const [occasion, setOccasion] = useState<Occasion | "">("");
   const [relationship, setRelationship] = useState<Relationship | "">("");
@@ -43,7 +41,6 @@ export default function Home() {
   const [avoid, setAvoid] = useState("");
   const [extraNotes, setExtraNotes] = useState("");
 
-  // Amazon associate tag
   const AMAZON_TAG = "23180ab-20";
 
   useEffect(() => {
@@ -96,10 +93,7 @@ export default function Home() {
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Something went wrong");
-      }
+      if (!res.ok) throw new Error(data.error || "Something went wrong");
 
       setIdeas(data.ideas || []);
       setStep("results");
@@ -140,7 +134,7 @@ export default function Home() {
 
     saveProfile(profile);
     setSavedProfiles(getSavedProfiles());
-    alert("Profile saved! You can reuse it next time.");
+    alert("Profile saved!");
   };
 
   const loadProfile = (p: RecipientProfile) => {
@@ -174,25 +168,14 @@ export default function Home() {
     );
 
     if (existing) {
-      const updatedLikes = Array.from(
-        new Set([...(existing.likedIdeas || []), ideaTitle])
-      );
-
-      const updatedProfile = {
-        ...existing,
-        likedIdeas: updatedLikes,
-      };
-
-      const all = getSavedProfiles().map((p) =>
-        p.id === existing.id ? updatedProfile : p
-      );
-
+      const updatedLikes = Array.from(new Set([...(existing.likedIdeas || []), ideaTitle]));
+      const updatedProfile = { ...existing, likedIdeas: updatedLikes };
+      const all = getSavedProfiles().map((p) => (p.id === existing.id ? updatedProfile : p));
       localStorage.setItem("gift-profiles", JSON.stringify(all));
       setSavedProfiles(all);
-
-      alert(`Saved! We'll remember that you liked "${ideaTitle}" for ${recipientName}.`);
+      alert(`Saved! We'll remember that you liked "${ideaTitle}".`);
     } else {
-      alert("Please save this profile first so we can remember your preferences.");
+      alert("Please save this profile first.");
     }
   };
 
@@ -207,77 +190,63 @@ export default function Home() {
     );
 
     if (existing) {
-      const updatedDislikes = Array.from(
-        new Set([...(existing.dislikedIdeas || []), ideaTitle])
-      );
-
-      const updatedProfile = {
-        ...existing,
-        dislikedIdeas: updatedDislikes,
-      };
-
-      const all = getSavedProfiles().map((p) =>
-        p.id === existing.id ? updatedProfile : p
-      );
-
+      const updatedDislikes = Array.from(new Set([...(existing.dislikedIdeas || []), ideaTitle]));
+      const updatedProfile = { ...existing, dislikedIdeas: updatedDislikes };
+      const all = getSavedProfiles().map((p) => (p.id === existing.id ? updatedProfile : p));
       localStorage.setItem("gift-profiles", JSON.stringify(all));
       setSavedProfiles(all);
-
-      alert(`Got it — we won't suggest "${ideaTitle}" again for ${recipientName}.`);
+      alert(`Got it — we won't suggest "${ideaTitle}" again.`);
     } else {
-      alert("Please save this profile first so we can remember your preferences.");
+      alert("Please save this profile first.");
     }
   };
 
-  const amazonLink = (query: string) => {
-    const encoded = encodeURIComponent(query);
-    return `https://www.amazon.com/s?k=${encoded}&tag=${AMAZON_TAG}`;
-  };
+  const amazonLink = (query: string) =>
+    `https://www.amazon.com/s?k=${encodeURIComponent(query)}&tag=${AMAZON_TAG}`;
 
-  const walmartLink = (query: string) => {
-    const encoded = encodeURIComponent(query);
-    return `https://www.walmart.com/search?q=${encoded}`;
-  };
+  const walmartLink = (query: string) =>
+    `https://www.walmart.com/search?q=${encodeURIComponent(query)}`;
 
-  // ========== RENDER ==========
-
+  // ========== HOME ==========
   if (step === "home") {
     return (
-      <div className="min-h-screen flex flex-col">
-        <header className="p-4 flex items-center justify-between max-w-lg mx-auto w-full">
-          <div className="flex items-center gap-2 font-semibold text-lg">
-            <Gift className="w-6 h-6 text-violet-600" />
-            <span>GiftIdea</span>
+      <div className="min-h-screen bg-gradient-to-b from-violet-50 to-white">
+        <header className="max-w-lg mx-auto px-5 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center">
+              <Gift className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-semibold text-lg tracking-tight">Gifts4You</span>
           </div>
           {savedProfiles.length > 0 && (
             <button
               onClick={() => setStep("profiles")}
-              className="text-sm text-violet-600 font-medium"
+              className="text-sm font-medium text-violet-700 hover:text-violet-900"
             >
               Saved ({savedProfiles.length})
             </button>
           )}
         </header>
 
-        <main className="flex-1 flex flex-col items-center justify-center px-6 pb-20 max-w-lg mx-auto w-full">
-          <div className="w-16 h-16 rounded-2xl bg-violet-100 flex items-center justify-center mb-6">
-            <Sparkles className="w-8 h-8 text-violet-600" />
+        <main className="max-w-lg mx-auto px-5 pt-10 pb-16">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-violet-100 mb-6">
+              <Sparkles className="w-8 h-8 text-violet-600" />
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900 mb-4">
+              Find the perfect gift<br />in minutes
+            </h1>
+            <p className="text-gray-600 text-[15px] leading-relaxed max-w-sm mx-auto">
+              Answer a few questions about the person you’re shopping for and get thoughtful, personalized ideas.
+            </p>
           </div>
-
-          <h1 className="text-3xl font-bold text-center mb-3 leading-tight">
-            Find the perfect gift in minutes
-          </h1>
-
-          <p className="text-center text-gray-600 mb-10 leading-relaxed">
-            Answer a few questions about the person you’re shopping for and get thoughtful, personalized ideas — not generic lists.
-          </p>
 
           <button
             onClick={() => {
               resetForm();
               setStep("form");
             }}
-            className="w-full bg-violet-600 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-violet-200 active:scale-[0.98] transition"
+            className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-violet-200 transition active:scale-[0.98]"
           >
             Start finding gifts
             <ArrowRight className="w-5 h-5" />
@@ -286,35 +255,32 @@ export default function Home() {
           {savedProfiles.length > 0 && (
             <button
               onClick={() => setStep("profiles")}
-              className="mt-4 text-violet-600 font-medium text-sm"
+              className="w-full mt-3 text-violet-700 font-medium text-sm py-3"
             >
               Or use a saved profile
             </button>
           )}
 
-          <div className="mt-10 text-center px-4">
+          <div className="mt-8">
             <button
               onClick={() => setShowPricing(true)}
-              className="bg-violet-600 hover:bg-violet-700 text-white font-semibold py-3 px-8 rounded-2xl shadow-md transition"
+              className="w-full border border-violet-200 bg-white hover:bg-violet-50 text-violet-700 font-medium py-3.5 rounded-2xl transition"
             >
-              Upgrade to Pro – Unlimited Profiles
+              Upgrade to Pro — Unlimited Profiles
             </button>
           </div>
 
           {showPricing && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 relative">
+            <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 relative shadow-xl">
                 <button
                   onClick={() => setShowPricing(false)}
-                  className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl leading-none"
+                  className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl"
                 >
                   ×
                 </button>
-
-                <h2 className="text-xl font-bold text-center mb-4">Upgrade to Pro</h2>
-
+                <h2 className="text-xl font-bold text-center mb-5">Upgrade to Pro</h2>
                 <Script async src="https://js.stripe.com/v3/pricing-table.js" />
-
                 {React.createElement("stripe-pricing-table", {
                   "pricing-table-id": "prctbl_1UXXKEIAYv4F4L27F0BTqq2f",
                   "publishable-key": "pk_live_51UXPJjIAYv4F4L270jGtNXObsHUurmwCi94JsfZ3kjVQWlvZiGyKqpCeW24PeReLTqXm4vA8OZ7L7qLQRGxPHxCU00WsbwFrBr",
@@ -323,52 +289,48 @@ export default function Home() {
             </div>
           )}
 
-          <footer className="mt-16 text-center text-xs text-gray-400 space-y-2">
+          <footer className="mt-16 text-center text-xs text-gray-400 space-y-1.5">
             <p>As an Amazon Associate I earn from qualifying purchases.</p>
-            <p>
-              <Link href="/privacy" className="underline hover:text-violet-600">
-                Privacy Policy
-              </Link>
-            </p>
+            <Link href="/privacy" className="underline hover:text-violet-600">
+              Privacy Policy
+            </Link>
           </footer>
         </main>
       </div>
     );
   }
 
+  // ========== PROFILES ==========
   if (step === "profiles") {
     return (
-      <div className="min-h-screen max-w-lg mx-auto">
-        <header className="p-4 flex items-center gap-3 border-b">
-          <button onClick={() => setStep("home")} className="p-2 -ml-2">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="font-semibold text-lg">Saved Profiles</h1>
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white border-b sticky top-0 z-10">
+          <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
+            <button onClick={() => setStep("home")} className="p-2 -ml-2 rounded-full hover:bg-gray-100">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="font-semibold text-lg">Saved Profiles</h1>
+          </div>
         </header>
 
-        <div className="p-4 space-y-3">
+        <div className="max-w-lg mx-auto p-4 space-y-3">
           {savedProfiles.length === 0 ? (
-            <p className="text-center text-gray-500 py-12">No saved profiles yet.</p>
+            <p className="text-center text-gray-500 py-16">No saved profiles yet.</p>
           ) : (
             savedProfiles.map((p) => (
               <div
                 key={p.id}
-                className="bg-white border rounded-2xl p-4 flex items-start justify-between gap-3 shadow-sm"
+                className="bg-white border border-gray-100 rounded-2xl p-4 flex items-start justify-between gap-3 shadow-sm"
               >
                 <button onClick={() => loadProfile(p)} className="text-left flex-1">
-                  <div className="font-semibold">{p.name}</div>
+                  <div className="font-semibold text-gray-900">{p.name}</div>
                   <div className="text-sm text-gray-500 mt-0.5">
                     {p.relationship} · {p.occasion}
                   </div>
-                  {p.interests && (
-                    <div className="text-xs text-gray-400 mt-1 line-clamp-1">
-                      {p.interests}
-                    </div>
-                  )}
                 </button>
                 <button
                   onClick={() => handleDeleteProfile(p.id)}
-                  className="p-2 text-gray-400 hover:text-red-500"
+                  className="p-2 text-gray-400 hover:text-red-500 rounded-lg"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -380,38 +342,42 @@ export default function Home() {
     );
   }
 
+  // ========== FORM ==========
   if (step === "form") {
     return (
-      <div className="min-h-screen max-w-lg mx-auto pb-28">
-        <header className="sticky top-0 bg-[var(--background)] z-10 p-4 flex items-center gap-3 border-b">
-          <button onClick={() => setStep("home")} className="p-2 -ml-2">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="font-semibold text-lg">Tell us about them</h1>
+      <div className="min-h-screen bg-gray-50 pb-28">
+        <header className="bg-white border-b sticky top-0 z-10">
+          <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
+            <button onClick={() => setStep("home")} className="p-2 -ml-2 rounded-full hover:bg-gray-100">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="font-semibold text-lg">Tell us about them</h1>
+          </div>
         </header>
 
-        <div className="p-4 space-y-5">
+        <div className="max-w-lg mx-auto p-4 space-y-5">
+          {/* Form fields - keeping structure clean */}
           <div>
-            <label className="block text-sm font-medium mb-1.5">
-              Recipient’s name <span className="text-gray-400">(optional but recommended)</span>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Recipient’s name <span className="text-gray-400 font-normal">(recommended)</span>
             </label>
             <input
               type="text"
               value={recipientName}
               onChange={(e) => setRecipientName(e.target.value)}
               placeholder="e.g. Sarah"
-              className="w-full border rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
               Occasion <span className="text-red-500">*</span>
             </label>
             <select
               value={occasion}
               onChange={(e) => setOccasion(e.target.value as Occasion)}
-              className="w-full border rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
             >
               <option value="">Select occasion</option>
               {OCCASIONS.map((o) => (
@@ -421,13 +387,13 @@ export default function Home() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
               Relationship <span className="text-red-500">*</span>
             </label>
             <select
               value={relationship}
               onChange={(e) => setRelationship(e.target.value as Relationship)}
-              className="w-full border rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
             >
               <option value="">Select relationship</option>
               {RELATIONSHIPS.map((r) => (
@@ -437,11 +403,11 @@ export default function Home() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">Age range</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Age range</label>
             <select
               value={ageRange}
               onChange={(e) => setAgeRange(e.target.value)}
-              className="w-full border rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
             >
               <option value="">Select age range</option>
               {AGE_RANGES.map((a) => (
@@ -451,33 +417,33 @@ export default function Home() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">Interests & hobbies</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Interests & hobbies</label>
             <textarea
               value={interests}
               onChange={(e) => setInterests(e.target.value)}
               placeholder="e.g. loves cooking, hiking, sci-fi books, coffee"
               rows={3}
-              className="w-full border rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">Personality / vibe</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Personality / vibe</label>
             <textarea
               value={personality}
               onChange={(e) => setPersonality(e.target.value)}
-              placeholder="e.g. practical, sentimental, adventurous, introvert, loves surprises"
+              placeholder="e.g. practical, sentimental, adventurous"
               rows={2}
-              className="w-full border rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">Budget</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Budget</label>
             <select
               value={budget}
               onChange={(e) => setBudget(e.target.value)}
-              className="w-full border rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
             >
               <option value="">Select budget</option>
               {BUDGETS.map((b) => (
@@ -487,77 +453,77 @@ export default function Home() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">Things to avoid</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Things to avoid</label>
             <input
               type="text"
               value={avoid}
               onChange={(e) => setAvoid(e.target.value)}
-              placeholder="e.g. no clothes, no scented items, already has a Kindle"
-              className="w-full border rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+              placeholder="e.g. no clothes, no scented items"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">Anything else?</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Anything else?</label>
             <textarea
               value={extraNotes}
               onChange={(e) => setExtraNotes(e.target.value)}
-              placeholder="Recent life events, inside jokes, preferences..."
+              placeholder="Recent life events, preferences..."
               rows={2}
-              className="w-full border rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
             />
           </div>
 
           {error && (
-            <div className="bg-red-50 text-red-700 text-sm p-3 rounded-xl">
+            <div className="bg-red-50 text-red-700 text-sm p-3.5 rounded-xl border border-red-100">
               {error}
             </div>
           )}
         </div>
 
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t max-w-lg mx-auto">
-          <button
-            onClick={handleGenerate}
-            disabled={loading}
-            className="w-full bg-violet-600 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.98] transition"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Generating ideas...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-5 h-5" />
-                Get gift ideas
-              </>
-            )}
-          </button>
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t">
+          <div className="max-w-lg mx-auto">
+            <button
+              onClick={handleGenerate}
+              disabled={loading}
+              className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-60 transition"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Generating ideas...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-5 h-5" />
+                  Get gift ideas
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Results step
+  // ========== RESULTS ==========
   return (
-    <div className="min-h-screen max-w-lg mx-auto pb-8">
-      <header className="sticky top-0 bg-[var(--background)] z-10 p-4 flex items-center justify-between border-b">
-        <button onClick={() => setStep("form")} className="p-2 -ml-2">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h1 className="font-semibold text-lg">Gift Ideas</h1>
-        <button
-          onClick={handleSaveProfile}
-          className="p-2 text-violet-600"
-          title="Save this profile"
-        >
-          <Save className="w-5 h-5" />
-        </button>
+    <div className="min-h-screen bg-gray-50 pb-10">
+      <header className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
+          <button onClick={() => setStep("form")} className="p-2 -ml-2 rounded-full hover:bg-gray-100">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h1 className="font-semibold text-lg">Gift Ideas</h1>
+          <button onClick={handleSaveProfile} className="p-2 text-violet-600 rounded-full hover:bg-violet-50">
+            <Save className="w-5 h-5" />
+          </button>
+        </div>
       </header>
 
-      <div className="p-4">
+      <div className="max-w-lg mx-auto p-4">
         {recipientName && (
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-500 mb-5">
             Ideas for <span className="font-medium text-gray-800">{recipientName}</span>
             {occasion && <> · {occasion}</>}
           </p>
@@ -565,17 +531,17 @@ export default function Home() {
 
         <div className="space-y-4">
           {ideas.map((idea, idx) => (
-            <div key={idx} className="bg-white border rounded-2xl p-5 shadow-sm">
+            <div key={idx} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
               <div className="flex items-start justify-between gap-3 mb-2">
-                <h3 className="font-semibold text-lg leading-snug">{idea.title}</h3>
-                <span className="text-xs font-medium bg-violet-50 text-violet-700 px-2 py-1 rounded-full whitespace-nowrap">
+                <h3 className="font-semibold text-lg text-gray-900 leading-snug">{idea.title}</h3>
+                <span className="text-xs font-medium bg-violet-50 text-violet-700 px-2.5 py-1 rounded-full whitespace-nowrap">
                   {idea.estimatedPrice}
                 </span>
               </div>
 
-              <p className="text-gray-600 text-sm mb-3">{idea.description}</p>
+              <p className="text-gray-600 text-sm mb-4 leading-relaxed">{idea.description}</p>
 
-              <div className="bg-violet-50 rounded-xl p-3 mb-4">
+              <div className="bg-violet-50 rounded-xl p-3.5 mb-4">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-violet-700 mb-1">
                   <Heart className="w-3.5 h-3.5" />
                   Why this fits
@@ -583,7 +549,7 @@ export default function Home() {
                 <p className="text-sm text-violet-900 leading-relaxed">{idea.whyItFits}</p>
               </div>
 
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2.5">
                 <a
                   href={amazonLink(idea.searchQuery)}
                   target="_blank"
@@ -593,7 +559,6 @@ export default function Home() {
                   Search on Amazon
                   <ExternalLink className="w-4 h-4" />
                 </a>
-
                 <a
                   href={walmartLink(idea.searchQuery)}
                   target="_blank"
@@ -605,16 +570,16 @@ export default function Home() {
                 </a>
               </div>
 
-              <div className="flex gap-2 mt-3">
+              <div className="flex gap-2.5 mt-3">
                 <button
                   onClick={() => handleLike(idea.title)}
-                  className="flex-1 border border-green-300 text-green-700 font-medium py-2 rounded-xl text-sm hover:bg-green-50"
+                  className="flex-1 border border-green-200 text-green-700 font-medium py-2.5 rounded-xl text-sm hover:bg-green-50 transition"
                 >
                   👍 Like
                 </button>
                 <button
                   onClick={() => handleDislike(idea.title)}
-                  className="flex-1 border border-red-300 text-red-700 font-medium py-2 rounded-xl text-sm hover:bg-red-50"
+                  className="flex-1 border border-red-200 text-red-700 font-medium py-2.5 rounded-xl text-sm hover:bg-red-50 transition"
                 >
                   👎 Dislike
                 </button>
@@ -628,7 +593,7 @@ export default function Home() {
             resetForm();
             setStep("form");
           }}
-          className="mt-6 w-full border border-violet-200 text-violet-700 font-medium py-3 rounded-2xl"
+          className="mt-6 w-full border border-violet-200 text-violet-700 font-medium py-3.5 rounded-2xl hover:bg-violet-50 transition"
         >
           Start a new search
         </button>
