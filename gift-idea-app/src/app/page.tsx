@@ -116,7 +116,6 @@ export default function Home() {
       return;
     }
 
-    // Free users are limited to 2 profiles
     if (savedProfiles.length >= 2) {
       alert("Free plan is limited to 2 saved profiles. Upgrade to Pro for unlimited profiles.");
       setShowPricing(true);
@@ -136,6 +135,7 @@ export default function Home() {
       extraNotes,
       createdAt: new Date().toISOString(),
       dislikedIdeas: [],
+      likedIdeas: [],
     };
 
     saveProfile(profile);
@@ -160,6 +160,39 @@ export default function Home() {
     if (confirm("Delete this saved profile?")) {
       deleteProfile(id);
       setSavedProfiles(getSavedProfiles());
+    }
+  };
+
+  const handleLike = (ideaTitle: string) => {
+    if (!recipientName.trim()) {
+      alert("Save this profile first so we can remember your likes.");
+      return;
+    }
+
+    const existing = savedProfiles.find(
+      (p) => p.name.toLowerCase() === recipientName.trim().toLowerCase()
+    );
+
+    if (existing) {
+      const updatedLikes = Array.from(
+        new Set([...(existing.likedIdeas || []), ideaTitle])
+      );
+
+      const updatedProfile = {
+        ...existing,
+        likedIdeas: updatedLikes,
+      };
+
+      const all = getSavedProfiles().map((p) =>
+        p.id === existing.id ? updatedProfile : p
+      );
+
+      localStorage.setItem("gift-profiles", JSON.stringify(all));
+      setSavedProfiles(all);
+
+      alert(`Saved! We'll remember that you liked "${ideaTitle}" for ${recipientName}.`);
+    } else {
+      alert("Please save this profile first so we can remember your preferences.");
     }
   };
 
@@ -574,7 +607,7 @@ export default function Home() {
 
               <div className="flex gap-2 mt-3">
                 <button
-                  onClick={() => alert("Thanks! Glad you liked this idea.")}
+                  onClick={() => handleLike(idea.title)}
                   className="flex-1 border border-green-300 text-green-700 font-medium py-2 rounded-xl text-sm hover:bg-green-50"
                 >
                   👍 Like
