@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Script from "next/script";
-import { Gift, Sparkles, User, Heart, ArrowRight, ArrowLeft, Loader2, ExternalLink, Save, Trash2 } from "lucide-react";
+import { Gift, Sparkles, Heart, ArrowRight, ArrowLeft, Loader2, ExternalLink, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { GiftIdea, RecipientProfile, Occasion, Relationship } from "@/types";
 import { getSavedProfiles, saveProfile, deleteProfile } from "@/lib/storage";
@@ -88,6 +88,10 @@ export default function Home() {
           avoid,
           extraNotes,
           recipientName: recipientName || undefined,
+          dislikedIdeas:
+            savedProfiles.find(
+              (p) => p.name.toLowerCase() === recipientName.trim().toLowerCase()
+            )?.dislikedIdeas || [],
         }),
       });
 
@@ -131,6 +135,7 @@ export default function Home() {
       avoid,
       extraNotes,
       createdAt: new Date().toISOString(),
+      dislikedIdeas: [],
     };
 
     saveProfile(profile);
@@ -155,6 +160,39 @@ export default function Home() {
     if (confirm("Delete this saved profile?")) {
       deleteProfile(id);
       setSavedProfiles(getSavedProfiles());
+    }
+  };
+
+  const handleDislike = (ideaTitle: string) => {
+    if (!recipientName.trim()) {
+      alert("Save this profile first so we can remember your dislikes.");
+      return;
+    }
+
+    const existing = savedProfiles.find(
+      (p) => p.name.toLowerCase() === recipientName.trim().toLowerCase()
+    );
+
+    if (existing) {
+      const updatedDislikes = Array.from(
+        new Set([...(existing.dislikedIdeas || []), ideaTitle])
+      );
+
+      const updatedProfile = {
+        ...existing,
+        dislikedIdeas: updatedDislikes,
+      };
+
+      const all = getSavedProfiles().map((p) =>
+        p.id === existing.id ? updatedProfile : p
+      );
+
+      localStorage.setItem("gift-profiles", JSON.stringify(all));
+      setSavedProfiles(all);
+
+      alert(`Got it — we won't suggest "${ideaTitle}" again for ${recipientName}.`);
+    } else {
+      alert("Please save this profile first so we can remember your preferences.");
     }
   };
 
@@ -221,7 +259,6 @@ export default function Home() {
             </button>
           )}
 
-          {/* Upgrade Button */}
           <div className="mt-10 text-center px-4">
             <button
               onClick={() => setShowPricing(true)}
@@ -231,7 +268,6 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Pricing Table Modal */}
           {showPricing && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 relative">
@@ -534,6 +570,21 @@ export default function Home() {
                   Search on Walmart
                   <ExternalLink className="w-4 h-4" />
                 </a>
+              </div>
+
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={() => alert("Thanks! Glad you liked this idea.")}
+                  className="flex-1 border border-green-300 text-green-700 font-medium py-2 rounded-xl text-sm hover:bg-green-50"
+                >
+                  👍 Like
+                </button>
+                <button
+                  onClick={() => handleDislike(idea.title)}
+                  className="flex-1 border border-red-300 text-red-700 font-medium py-2 rounded-xl text-sm hover:bg-red-50"
+                >
+                  👎 Dislike
+                </button>
               </div>
             </div>
           ))}
