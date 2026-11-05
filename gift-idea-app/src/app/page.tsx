@@ -112,6 +112,13 @@ export default function Home() {
       return;
     }
 
+    // Free users are limited to 2 profiles
+    if (savedProfiles.length >= 2) {
+      alert("Free plan is limited to 2 saved profiles. Upgrade to Pro for unlimited profiles.");
+      setShowPricing(true);
+      return;
+    }
+
     const profile: RecipientProfile = {
       id: crypto.randomUUID(),
       name: recipientName.trim(),
@@ -155,10 +162,12 @@ export default function Home() {
     const encoded = encodeURIComponent(query);
     return `https://www.amazon.com/s?k=${encoded}&tag=${AMAZON_TAG}`;
   };
-const walmartLink = (query: string) => {
-  const encoded = encodeURIComponent(query);
-  return `https://www.walmart.com/search?q=${encoded}`;
-};
+
+  const walmartLink = (query: string) => {
+    const encoded = encodeURIComponent(query);
+    return `https://www.walmart.com/search?q=${encoded}`;
+  };
+
   // ========== RENDER ==========
 
   if (step === "home") {
@@ -504,19 +513,28 @@ const walmartLink = (query: string) => {
                 </div>
                 <p className="text-sm text-violet-900 leading-relaxed">{idea.whyItFits}</p>
               </div>
- <a
-                href={amazonLink(idea.searchQuery)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full bg-amber-400 hover:bg-amber-500 text-black font-semibold py-3 rounded-xl transition"
-              >
-                Search on Amazon
-                <ExternalLink className="w-4 h-4" />
-              </a>
-             </div>
-              <p className="text-[10px] text-center text-gray-400 mt-1.5">
-                Affiliate link · Supports the app at no extra cost
-              </p>
+
+              <div className="flex flex-col gap-2">
+                <a
+                  href={amazonLink(idea.searchQuery)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full bg-amber-400 hover:bg-amber-500 text-black font-semibold py-3 rounded-xl transition"
+                >
+                  Search on Amazon
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+
+                <a
+                  href={walmartLink(idea.searchQuery)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition"
+                >
+                  Search on Walmart
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </div>
             </div>
           ))}
         </div>
