@@ -20,6 +20,7 @@ const RELATIONSHIPS: Relationship[] = [
 
 const AGE_RANGES = ["Under 18", "18-24", "25-34", "35-44", "45-54", "55-64", "65+", "Prefer not to say"];
 const BUDGETS = ["Under $25", "$25 – $50", "$50 – $100", "$100 – $200", "$200+", "No limit / Flexible"];
+const GENDERS = ["Male", "Female", "Unisex / Doesn't matter", "Prefer not to say"];
 
 type Step = "home" | "form" | "results" | "profiles";
 
@@ -35,6 +36,7 @@ export default function Home() {
   const [occasion, setOccasion] = useState<Occasion | "">("");
   const [relationship, setRelationship] = useState<Relationship | "">("");
   const [ageRange, setAgeRange] = useState("");
+  const [gender, setGender] = useState("");
   const [interests, setInterests] = useState("");
   const [personality, setPersonality] = useState("");
   const [budget, setBudget] = useState("");
@@ -52,6 +54,7 @@ export default function Home() {
     setOccasion("");
     setRelationship("");
     setAgeRange("");
+    setGender("");
     setInterests("");
     setPersonality("");
     setBudget("");
@@ -79,6 +82,7 @@ export default function Home() {
           occasion,
           relationship,
           ageRange,
+          gender,
           interests,
           personality,
           budget,
@@ -122,6 +126,7 @@ export default function Home() {
       occasion: (occasion as Occasion) || "Other",
       relationship: (relationship as Relationship) || "Other",
       ageRange,
+      gender,
       interests,
       personality,
       budget,
@@ -142,6 +147,7 @@ export default function Home() {
     setOccasion(p.occasion);
     setRelationship(p.relationship);
     setAgeRange(p.ageRange);
+    setGender(p.gender || "");
     setInterests(p.interests);
     setPersonality(p.personality);
     setBudget(p.budget);
@@ -356,7 +362,6 @@ export default function Home() {
         </header>
 
         <div className="max-w-lg mx-auto p-4 space-y-5">
-          {/* Form fields - keeping structure clean */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               Recipient’s name <span className="text-gray-400 font-normal">(recommended)</span>
@@ -398,6 +403,20 @@ export default function Home() {
               <option value="">Select relationship</option>
               {RELATIONSHIPS.map((r) => (
                 <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Gender</label>
+            <select
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+            >
+              <option value="">Select gender</option>
+              {GENDERS.map((g) => (
+                <option key={g} value={g}>{g}</option>
               ))}
             </select>
           </div>
