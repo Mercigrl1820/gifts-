@@ -13,6 +13,7 @@ export async function POST(request: Request) {
       occasion,
       relationship,
       ageRange,
+      gender,
       interests,
       personality,
       budget,
@@ -36,6 +37,7 @@ Generate 5 personalized gift ideas based on the following information:
 - Occasion: ${occasion}
 - Relationship: ${relationship}
 - Age range: ${ageRange || "Not specified"}
+- Gender: ${gender || "Not specified"}
 - Interests & hobbies: ${interests || "Not specified"}
 - Personality / vibe: ${personality || "Not specified"}
 - Budget: ${budget || "Flexible"}
@@ -98,4 +100,3 @@ Return the response as a valid JSON object with this exact structure:
     );
   }
 }
-- Gender: ${gender || "Not specified"}
