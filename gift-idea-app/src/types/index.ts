@@ -43,4 +43,5 @@ export type RecipientProfile = {
   extraNotes: string;
   createdAt: string;
   dislikedIdeas?: string[];
+  likedIdeas?: string[];
 };
