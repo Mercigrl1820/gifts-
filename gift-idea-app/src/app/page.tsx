@@ -155,7 +155,10 @@ export default function Home() {
     const encoded = encodeURIComponent(query);
     return `https://www.amazon.com/s?k=${encoded}&tag=${AMAZON_TAG}`;
   };
-
+const walmartLink = (query: string) => {
+  const encoded = encodeURIComponent(query);
+  return `https://www.walmart.com/search?q=${encoded}`;
+};
   // ========== RENDER ==========
 
   if (step === "home") {
@@ -501,8 +504,7 @@ export default function Home() {
                 </div>
                 <p className="text-sm text-violet-900 leading-relaxed">{idea.whyItFits}</p>
               </div>
-
-              <a
+ <a
                 href={amazonLink(idea.searchQuery)}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -511,6 +513,7 @@ export default function Home() {
                 Search on Amazon
                 <ExternalLink className="w-4 h-4" />
               </a>
+             </div>
               <p className="text-[10px] text-center text-gray-400 mt-1.5">
                 Affiliate link · Supports the app at no extra cost
               </p>
