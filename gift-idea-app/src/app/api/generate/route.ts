@@ -98,3 +98,4 @@ Return the response as a valid JSON object with this exact structure:
     );
   }
 }
+- Gender: ${gender || "Not specified"}
