@@ -36,6 +36,7 @@ export type RecipientProfile = {
   occasion: Occasion;
   relationship: Relationship;
   ageRange: string;
+  gender?: string;
   interests: string;
   personality: string;
   budget: string;
