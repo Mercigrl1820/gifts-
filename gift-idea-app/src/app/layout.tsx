@@ -1,16 +1,11 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "GiftIdea – Personalized Gift Recommendations",
-  description:
-    "Answer a few questions and get thoughtful, personalized gift ideas for birthdays, anniversaries, holidays and more.",
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
+  title: "Gifts4You",
+  description: "Find the perfect gift in minutes",
 };
 
 export default function RootLayout({
@@ -20,7 +15,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen antialiased">{children}</body>
+      <body>
+        {children}
+        <Analytics />
+        <SpeedInsights />
+      </body>
     </html>
   );
 }
