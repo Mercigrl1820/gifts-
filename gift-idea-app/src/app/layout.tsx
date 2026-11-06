@@ -16,8 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Paste the meta tag from Target here */}
-        <meta name="partnerize-verification" content= <meta name='impact-site-verification' value='81f3ed57-25ce-4bd7-8785-c551a89dd4d0'>/>
+        <meta name="impact-site-verification" content="81f3ed57-25ce-4bd7-8785-c551a89dd4d0" />
       </head>
       <body>
         {children}
