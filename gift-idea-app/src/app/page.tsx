@@ -453,50 +453,107 @@ export default function Home() {
     );
   }
 
+  // ========== IMPROVED RESULTS ==========
   return (
-    <div className="min-h-screen bg-gray-50 pb-10">
+    <div className="min-h-screen bg-gray-50 pb-12">
       <header className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
-          <button onClick={() => setStep("form")} className="p-2 -ml-2 rounded-full hover:bg-gray-100"><ArrowLeft className="w-5 h-5" /></button>
+          <button onClick={() => setStep("form")} className="p-2 -ml-2 rounded-full hover:bg-gray-100">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
           <h1 className="font-semibold text-lg">Gift Ideas</h1>
-          <button onClick={handleSaveProfile} className="p-2 text-violet-600 rounded-full hover:bg-violet-50"><Save className="w-5 h-5" /></button>
+          <button onClick={handleSaveProfile} className="p-2 text-violet-600 rounded-full hover:bg-violet-50">
+            <Save className="w-5 h-5" />
+          </button>
         </div>
       </header>
-      <div className="max-w-lg mx-auto p-4">
+
+      <div className="max-w-lg mx-auto px-4 pt-6">
         {recipientName && (
-          <p className="text-sm text-gray-500 mb-5">
-            Ideas for <span className="font-medium text-gray-800">{recipientName}</span>
-            {occasion && <> · {occasion}</>}
-          </p>
+          <div className="mb-6">
+            <p className="text-sm text-gray-500">Personalized ideas for</p>
+            <h2 className="text-xl font-semibold text-gray-900">
+              {recipientName}
+              {occasion && <span className="text-violet-600 font-normal"> · {occasion}</span>}
+            </h2>
+          </div>
         )}
-        <div className="space-y-4">
+
+        <div className="space-y-5">
           {ideas.map((idea, idx) => (
-            <div key={idx} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <h3 className="font-semibold text-lg text-gray-900 leading-snug">{idea.title}</h3>
-                <span className="text-xs font-medium bg-violet-50 text-violet-700 px-2.5 py-1 rounded-full whitespace-nowrap">{idea.estimatedPrice}</span>
+            <div
+              key={idx}
+              className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <h3 className="font-semibold text-lg text-gray-900 leading-snug">
+                  {idea.title}
+                </h3>
+                <span className="shrink-0 text-xs font-medium bg-violet-50 text-violet-700 px-3 py-1 rounded-full">
+                  {idea.estimatedPrice}
+                </span>
               </div>
-              <p className="text-gray-600 text-sm mb-4 leading-relaxed">{idea.description}</p>
-              <div className="bg-violet-50 rounded-xl p-3.5 mb-4">
-                <div className="flex items-center gap-1.5 text-xs font-medium text-violet-700 mb-1"><Heart className="w-3.5 h-3.5" /> Why this fits</div>
-                <p className="text-sm text-violet-900 leading-relaxed">{idea.whyItFits}</p>
+
+              <p className="text-gray-600 text-[15px] leading-relaxed mb-4">
+                {idea.description}
+              </p>
+
+              <div className="bg-violet-50/70 border border-violet-100 rounded-xl p-4 mb-5">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-violet-700 mb-1.5">
+                  <Heart className="w-3.5 h-3.5" />
+                  Why this fits
+                </div>
+                <p className="text-sm text-violet-900 leading-relaxed">
+                  {idea.whyItFits}
+                </p>
               </div>
+
               <div className="flex flex-col gap-2.5">
-                <a href={amazonLink(idea.searchQuery)} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full bg-amber-400 hover:bg-amber-500 text-black font-semibold py-3 rounded-xl transition">
-                  Search on Amazon <ExternalLink className="w-4 h-4" />
+                <a
+                  href={amazonLink(idea.searchQuery)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full bg-amber-400 hover:bg-amber-500 text-black font-semibold py-3.5 rounded-xl transition"
+                >
+                  Search on Amazon
+                  <ExternalLink className="w-4 h-4" />
                 </a>
-                <a href={walmartLink(idea.searchQuery)} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition">
-                  Search on Walmart <ExternalLink className="w-4 h-4" />
+                <a
+                  href={walmartLink(idea.searchQuery)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-xl transition"
+                >
+                  Search on Walmart
+                  <ExternalLink className="w-4 h-4" />
                 </a>
               </div>
-              <div className="flex gap-2.5 mt-3">
-                <button onClick={() => handleLike(idea.title)} className="flex-1 border border-green-200 text-green-700 font-medium py-2.5 rounded-xl text-sm hover:bg-green-50 transition">👍 Like</button>
-                <button onClick={() => handleDislike(idea.title)} className="flex-1 border border-red-200 text-red-700 font-medium py-2.5 rounded-xl text-sm hover:bg-red-50 transition">👎 Dislike</button>
+
+              <div className="flex gap-2.5 mt-4 pt-4 border-t border-gray-100">
+                <button
+                  onClick={() => handleLike(idea.title)}
+                  className="flex-1 border border-green-200 text-green-700 font-medium py-2.5 rounded-xl text-sm hover:bg-green-50 transition"
+                >
+                  👍 Like
+                </button>
+                <button
+                  onClick={() => handleDislike(idea.title)}
+                  className="flex-1 border border-red-200 text-red-700 font-medium py-2.5 rounded-xl text-sm hover:bg-red-50 transition"
+                >
+                  👎 Dislike
+                </button>
               </div>
             </div>
           ))}
         </div>
-        <button onClick={() => { resetForm(); setStep("form"); }} className="mt-6 w-full border border-violet-200 text-violet-700 font-medium py-3.5 rounded-2xl hover:bg-violet-50 transition">
+
+        <button
+          onClick={() => {
+            resetForm();
+            setStep("form");
+          }}
+          className="mt-8 w-full border border-violet-200 text-violet-700 font-medium py-3.5 rounded-2xl hover:bg-violet-50 transition"
+        >
           Start a new search
         </button>
       </div>
