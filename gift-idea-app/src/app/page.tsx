@@ -37,6 +37,8 @@ export default function Home() {
   const [relationship, setRelationship] = useState<Relationship | "">("");
   const [ageRange, setAgeRange] = useState("");
   const [gender, setGender] = useState("");
+  const [birthday, setBirthday] = useState("");
+  const [address, setAddress] = useState("");
   const [interests, setInterests] = useState("");
   const [personality, setPersonality] = useState("");
   const [budget, setBudget] = useState("");
@@ -55,6 +57,8 @@ export default function Home() {
     setRelationship("");
     setAgeRange("");
     setGender("");
+    setBirthday("");
+    setAddress("");
     setInterests("");
     setPersonality("");
     setBudget("");
@@ -83,6 +87,7 @@ export default function Home() {
           relationship,
           ageRange,
           gender,
+          birthday,
           interests,
           personality,
           budget,
@@ -127,6 +132,8 @@ export default function Home() {
       relationship: (relationship as Relationship) || "Other",
       ageRange,
       gender,
+      birthday,
+      address,
       interests,
       personality,
       budget,
@@ -148,6 +155,8 @@ export default function Home() {
     setRelationship(p.relationship);
     setAgeRange(p.ageRange);
     setGender(p.gender || "");
+    setBirthday(p.birthday || "");
+    setAddress(p.address || "");
     setInterests(p.interests);
     setPersonality(p.personality);
     setBudget(p.budget);
@@ -333,6 +342,9 @@ export default function Home() {
                   <div className="text-sm text-gray-500 mt-0.5">
                     {p.relationship} · {p.occasion}
                   </div>
+                  {p.birthday && (
+                    <div className="text-xs text-gray-400 mt-1">Birthday: {p.birthday}</div>
+                  )}
                 </button>
                 <button
                   onClick={() => handleDeleteProfile(p.id)}
@@ -422,6 +434,27 @@ export default function Home() {
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Birthday (optional)</label>
+            <input
+              type="date"
+              value={birthday}
+              onChange={(e) => setBirthday(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Address (optional)</label>
+            <textarea
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Street, City, State, ZIP"
+              rows={2}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+            />
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Age range</label>
             <select
               value={ageRange}
@@ -462,161 +495,4 @@ export default function Home() {
             <select
               value={budget}
               onChange={(e) => setBudget(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-            >
-              <option value="">Select budget</option>
-              {BUDGETS.map((b) => (
-                <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Things to avoid</label>
-            <input
-              type="text"
-              value={avoid}
-              onChange={(e) => setAvoid(e.target.value)}
-              placeholder="e.g. no clothes, no scented items"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Anything else?</label>
-            <textarea
-              value={extraNotes}
-              onChange={(e) => setExtraNotes(e.target.value)}
-              placeholder="Recent life events, preferences..."
-              rows={2}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
-            />
-          </div>
-
-          {error && (
-            <div className="bg-red-50 text-red-700 text-sm p-3.5 rounded-xl border border-red-100">
-              {error}
-            </div>
-          )}
-        </div>
-
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t">
-          <div className="max-w-lg mx-auto">
-            <button
-              onClick={handleGenerate}
-              disabled={loading}
-              className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-60 transition"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Generating ideas...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5" />
-                  Get gift ideas
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ========== RESULTS ==========
-  return (
-    <div className="min-h-screen bg-gray-50 pb-10">
-      <header className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
-          <button onClick={() => setStep("form")} className="p-2 -ml-2 rounded-full hover:bg-gray-100">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="font-semibold text-lg">Gift Ideas</h1>
-          <button onClick={handleSaveProfile} className="p-2 text-violet-600 rounded-full hover:bg-violet-50">
-            <Save className="w-5 h-5" />
-          </button>
-        </div>
-      </header>
-
-      <div className="max-w-lg mx-auto p-4">
-        {recipientName && (
-          <p className="text-sm text-gray-500 mb-5">
-            Ideas for <span className="font-medium text-gray-800">{recipientName}</span>
-            {occasion && <> · {occasion}</>}
-          </p>
-        )}
-
-        <div className="space-y-4">
-          {ideas.map((idea, idx) => (
-            <div key={idx} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <h3 className="font-semibold text-lg text-gray-900 leading-snug">{idea.title}</h3>
-                <span className="text-xs font-medium bg-violet-50 text-violet-700 px-2.5 py-1 rounded-full whitespace-nowrap">
-                  {idea.estimatedPrice}
-                </span>
-              </div>
-
-              <p className="text-gray-600 text-sm mb-4 leading-relaxed">{idea.description}</p>
-
-              <div className="bg-violet-50 rounded-xl p-3.5 mb-4">
-                <div className="flex items-center gap-1.5 text-xs font-medium text-violet-700 mb-1">
-                  <Heart className="w-3.5 h-3.5" />
-                  Why this fits
-                </div>
-                <p className="text-sm text-violet-900 leading-relaxed">{idea.whyItFits}</p>
-              </div>
-
-              <div className="flex flex-col gap-2.5">
-                <a
-                  href={amazonLink(idea.searchQuery)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full bg-amber-400 hover:bg-amber-500 text-black font-semibold py-3 rounded-xl transition"
-                >
-                  Search on Amazon
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-                <a
-                  href={walmartLink(idea.searchQuery)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition"
-                >
-                  Search on Walmart
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              </div>
-
-              <div className="flex gap-2.5 mt-3">
-                <button
-                  onClick={() => handleLike(idea.title)}
-                  className="flex-1 border border-green-200 text-green-700 font-medium py-2.5 rounded-xl text-sm hover:bg-green-50 transition"
-                >
-                  👍 Like
-                </button>
-                <button
-                  onClick={() => handleDislike(idea.title)}
-                  className="flex-1 border border-red-200 text-red-700 font-medium py-2.5 rounded-xl text-sm hover:bg-red-50 transition"
-                >
-                  👎 Dislike
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <button
-          onClick={() => {
-            resetForm();
-            setStep("form");
-          }}
-          className="mt-6 w-full border border-violet-200 text-violet-700 font-medium py-3.5 rounded-2xl hover:bg-violet-50 transition"
-        >
-          Start a new search
-        </button>
-      </div>
-    </div>
-  );
-}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 
