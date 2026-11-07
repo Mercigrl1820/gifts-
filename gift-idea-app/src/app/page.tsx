@@ -31,6 +31,8 @@ export default function Home() {
   const [ideas, setIdeas] = useState<GiftIdea[]>([]);
   const [savedProfiles, setSavedProfiles] = useState<RecipientProfile[]>([]);
   const [showPricing, setShowPricing] = useState(false);
+  const [unlockCode, setUnlockCode] = useState("");
+  const [profileLimit, setProfileLimit] = useState(1);
 
   const [recipientName, setRecipientName] = useState("");
   const [occasion, setOccasion] = useState<Occasion | "">("");
@@ -49,6 +51,8 @@ export default function Home() {
 
   useEffect(() => {
     setSavedProfiles(getSavedProfiles());
+    const savedLimit = localStorage.getItem("gift-limit");
+    if (savedLimit) setProfileLimit(Number(savedLimit));
   }, []);
 
   const resetForm = () => {
@@ -66,6 +70,28 @@ export default function Home() {
     setExtraNotes("");
     setIdeas([]);
     setError("");
+  };
+
+  const handleUnlock = () => {
+    const code = unlockCode.trim().toUpperCase();
+
+    if (code === "BASIC2") {
+      setProfileLimit(2);
+      localStorage.setItem("gift-limit", "2");
+      alert("Basic plan unlocked — you can now save up to 2 profiles.");
+    } else if (code === "ADVANCED5") {
+      setProfileLimit(5);
+      localStorage.setItem("gift-limit", "5");
+      alert("Advanced plan unlocked — you can now save up to 5 profiles.");
+    } else if (code === "PROUNLIMITED") {
+      setProfileLimit(999);
+      localStorage.setItem("gift-limit", "999");
+      alert("Pro plan unlocked — unlimited profiles!");
+    } else {
+      alert("Invalid code. Please check and try again.");
+    }
+
+    setUnlockCode("");
   };
 
   const handleGenerate = async () => {
@@ -119,8 +145,12 @@ export default function Home() {
       return;
     }
 
-    if (savedProfiles.length >= 2) {
-      alert("Free plan is limited to 2 saved profiles. Upgrade to Pro for unlimited profiles.");
+    if (savedProfiles.length >= profileLimit) {
+      alert(
+        profileLimit <= 1
+          ? "Free plan allows 1 profile. Upgrade to save more."
+          : `Your plan allows up to ${profileLimit === 999 ? "unlimited" : profileLimit} profiles. Upgrade for more.`
+      );
       setShowPricing(true);
       return;
     }
@@ -263,14 +293,34 @@ export default function Home() {
           )}
           <div className="mt-8">
             <button onClick={() => setShowPricing(true)} className="w-full border border-violet-200 bg-white hover:bg-violet-50 text-violet-700 font-medium py-3.5 rounded-2xl transition">
-              Upgrade to Pro — Unlimited Profiles
+              Upgrade — More Saved Profiles
             </button>
           </div>
+
+          <div className="mt-6 text-center">
+            <p className="text-xs text-gray-500 mb-2">Have an unlock code?</p>
+            <div className="flex gap-2 max-w-xs mx-auto">
+              <input
+                type="text"
+                value={unlockCode}
+                onChange={(e) => setUnlockCode(e.target.value)}
+                placeholder="Enter code"
+                className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm"
+              />
+              <button
+                onClick={handleUnlock}
+                className="bg-violet-600 text-white text-sm font-medium px-4 py-2 rounded-xl"
+              >
+                Unlock
+              </button>
+            </div>
+          </div>
+
           {showPricing && (
             <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 relative shadow-xl">
                 <button onClick={() => setShowPricing(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl">×</button>
-                <h2 className="text-xl font-bold text-center mb-5">Upgrade to Pro</h2>
+                <h2 className="text-xl font-bold text-center mb-5">Upgrade Your Plan</h2>
                 <Script async src="https://js.stripe.com/v3/pricing-table.js" />
                 {React.createElement("stripe-pricing-table", {
                   "pricing-table-id": "prctbl_1UXXKEIAYv4F4L27F0BTqq2f",
