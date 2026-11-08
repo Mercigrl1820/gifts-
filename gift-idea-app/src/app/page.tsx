@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Script from "next/script";
 import { Gift, Sparkles, Heart, ArrowRight, ArrowLeft, Loader2, ExternalLink, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { GiftIdea, RecipientProfile, Occasion, Relationship } from "@/types";
 import { getSavedProfiles, saveProfile, deleteProfile } from "@/lib/storage";
+import { appendUniqueGiftIdeas, buildLoadMorePayload, type GiftSearchContext } from "@/lib/gift-ideas";
 
 const OCCASIONS: Occasion[] = [
   "Birthday", "Anniversary", "Christmas", "Valentine's Day",
@@ -27,8 +28,13 @@ type Step = "home" | "form" | "results" | "profiles";
 export default function Home() {
   const [step, setStep] = useState<Step>("home");
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
+  const [loadMoreError, setLoadMoreError] = useState("");
   const [ideas, setIdeas] = useState<GiftIdea[]>([]);
+  const [searchContext, setSearchContext] = useState<GiftSearchContext | null>(null);
+  const searchVersion = useRef(0);
+  const loadMoreLock = useRef(false);
   const [savedProfiles, setSavedProfiles] = useState<RecipientProfile[]>([]);
   const [showPricing, setShowPricing] = useState(false);
   const [unlockCode, setUnlockCode] = useState("");
@@ -56,6 +62,12 @@ export default function Home() {
   }, []);
 
   const resetForm = () => {
+    searchVersion.current += 1;
+    loadMoreLock.current = false;
+    setLoading(false);
+    setLoadingMore(false);
+    setLoadMoreError("");
+    setSearchContext(null);
     setRecipientName("");
     setOccasion("");
     setRelationship("");
@@ -71,6 +83,24 @@ export default function Home() {
     setIdeas([]);
     setError("");
   };
+
+  const buildSearchContext = (): GiftSearchContext => ({
+    occasion,
+    relationship,
+    ageRange,
+    gender,
+    birthday,
+    interests,
+    personality,
+    budget,
+    avoid,
+    extraNotes,
+    recipientName: recipientName || undefined,
+    dislikedIdeas:
+      savedProfiles.find(
+        (p) => p.name.toLowerCase() === recipientName.trim().toLowerCase()
+      )?.dislikedIdeas || [],
+  });
 
   const handleUnlock = () => {
     const code = unlockCode.trim().toUpperCase();
@@ -100,6 +130,12 @@ export default function Home() {
       return;
     }
 
+    const context = buildSearchContext();
+    const version = ++searchVersion.current;
+    loadMoreLock.current = false;
+    setLoadingMore(false);
+    setLoadMoreError("");
+    setSearchContext(null);
     setLoading(true);
     setError("");
     setIdeas([]);
@@ -108,34 +144,66 @@ export default function Home() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          occasion,
-          relationship,
-          ageRange,
-          gender,
-          birthday,
-          interests,
-          personality,
-          budget,
-          avoid,
-          extraNotes,
-          recipientName: recipientName || undefined,
-          dislikedIdeas:
-            savedProfiles.find(
-              (p) => p.name.toLowerCase() === recipientName.trim().toLowerCase()
-            )?.dislikedIdeas || [],
-        }),
+        body: JSON.stringify(context),
       });
 
       const data = await res.json();
+      if (searchVersion.current !== version) return;
       if (!res.ok) throw new Error(data.error || "Something went wrong");
 
-      setIdeas(data.ideas || []);
+      setSearchContext(context);
+      setIdeas(Array.isArray(data.ideas) ? data.ideas : []);
       setStep("results");
-    } catch (err: any) {
-      setError(err.message || "Failed to generate ideas. Check your OpenAI key.");
+    } catch (err: unknown) {
+      if (searchVersion.current !== version) return;
+      const message = err instanceof Error ? err.message : "";
+      setError(message || "Failed to generate ideas. Check your OpenAI key.");
     } finally {
-      setLoading(false);
+      if (searchVersion.current === version) setLoading(false);
+    }
+  };
+
+  const handleLoadMore = async () => {
+    if (!searchContext || loadMoreLock.current) return;
+    loadMoreLock.current = true;
+    const version = searchVersion.current;
+    const payload = buildLoadMorePayload(
+      searchContext,
+      ideas.map((idea) => idea.title)
+    );
+    setLoadingMore(true);
+    setLoadMoreError("");
+
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (searchVersion.current !== version) return;
+      if (!res.ok) {
+        const message =
+          data && typeof data.error === "string" && data.error.trim()
+            ? data.error
+            : "Could not load more gifts. Please try again.";
+        throw new Error(message);
+      }
+
+      const incoming = Array.isArray(data.ideas) ? data.ideas : [];
+      setIdeas((current) => {
+        if (searchVersion.current !== version) return current;
+        return appendUniqueGiftIdeas(current, incoming);
+      });
+    } catch (err: unknown) {
+      if (searchVersion.current !== version) return;
+      const message = err instanceof Error ? err.message : "";
+      setLoadMoreError(message || "Could not load more gifts. Please try again.");
+    } finally {
+      if (searchVersion.current === version) {
+        loadMoreLock.current = false;
+        setLoadingMore(false);
+      }
     }
   };
 
@@ -547,12 +615,34 @@ export default function Home() {
           ))}
         </div>
 
+        {loadMoreError && (
+          <div role="alert" className="mt-5 bg-red-50 text-red-700 text-sm p-3.5 rounded-xl border border-red-100">
+            {loadMoreError}
+          </div>
+        )}
+
+        <button
+          onClick={handleLoadMore}
+          disabled={loadingMore || !searchContext}
+          className="mt-8 w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-60 transition"
+        >
+          {loadingMore ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" /> Loading more gifts...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-5 h-5" /> Load more gifts
+            </>
+          )}
+        </button>
+
         <button
           onClick={() => {
             resetForm();
             setStep("form");
           }}
-          className="mt-8 w-full border border-violet-200 text-violet-700 font-medium py-3.5 rounded-2xl hover:bg-violet-50 transition"
+          className="mt-3 w-full border border-violet-200 text-violet-700 font-medium py-3.5 rounded-2xl hover:bg-violet-50 transition"
         >
           Start a new search
         </button>
