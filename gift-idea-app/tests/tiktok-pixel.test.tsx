@@ -8,7 +8,6 @@ import "@testing-library/jest-dom/vitest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Home from "../src/app/page";
 import RootLayout from "../src/app/layout";
-import { DEFAULT_TIKTOK_PIXEL_ID } from "../src/lib/tiktok";
 import { idea, jsonResponse } from "./fixtures";
 
 vi.mock("../src/app/globals.css", () => ({}));
@@ -76,7 +75,7 @@ describe("TikTok pixel install and events", () => {
     expect(script).not.toBeNull();
     expect(script).toHaveAttribute("data-strategy", "afterInteractive");
     const code = script?.textContent ?? "";
-    expect(code).toContain(`ttq.load('${DEFAULT_TIKTOK_PIXEL_ID}');`);
+    expect(code).toContain("ttq.load('DBPIPN3C77U4J2JR7E1G');");
     expect(code).toContain("ttq.page();");
     expect(code.indexOf("ttq.load(")).toBeLessThan(code.indexOf("ttq.page();"));
   });

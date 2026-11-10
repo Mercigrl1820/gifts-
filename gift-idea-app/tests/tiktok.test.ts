@@ -19,8 +19,9 @@ afterEach(() => {
 describe("TikTok pixel id", () => {
   it("falls back to the default pixel id when the env var is unset", () => {
     vi.stubEnv("NEXT_PUBLIC_TIKTOK_PIXEL_ID", "");
-    expect(resolveTikTokPixelId()).toBe(DEFAULT_TIKTOK_PIXEL_ID);
-    expect(tiktokPixelBaseCode()).toContain(`ttq.load('${DEFAULT_TIKTOK_PIXEL_ID}');`);
+    expect(DEFAULT_TIKTOK_PIXEL_ID).toBe("DBPIPN3C77U4J2JR7E1G");
+    expect(resolveTikTokPixelId()).toBe("DBPIPN3C77U4J2JR7E1G");
+    expect(tiktokPixelBaseCode()).toContain("ttq.load('DBPIPN3C77U4J2JR7E1G');");
   });
 
   it("uses NEXT_PUBLIC_TIKTOK_PIXEL_ID when it is a safe pixel id", () => {
@@ -35,7 +36,7 @@ describe("TikTok pixel id", () => {
   it("does not interpolate an unsafe pixel id into the snippet", () => {
     const code = tiktokPixelBaseCode("DBPI9');alert(1);//");
     expect(code).not.toContain("alert");
-    expect(code).toContain(`ttq.load('${DEFAULT_TIKTOK_PIXEL_ID}');`);
+    expect(code).toContain("ttq.load('DBPIPN3C77U4J2JR7E1G');");
     expect(code).toContain("https://analytics.tiktok.com/i18n/pixel/events.js");
   });
 });
