@@ -7,6 +7,7 @@ import Link from "next/link";
 import { GiftIdea, RecipientProfile, Occasion, Relationship } from "@/types";
 import { getSavedProfiles, saveProfile, deleteProfile } from "@/lib/storage";
 import { appendUniqueGiftIdeas, buildLoadMorePayload, type GiftSearchContext } from "@/lib/gift-ideas";
+import { trackGiftSearch, trackRetailerClick } from "@/lib/tiktok";
 
 const OCCASIONS: Occasion[] = [
   "Birthday", "Anniversary", "Christmas", "Valentine's Day",
@@ -129,6 +130,8 @@ export default function Home() {
       setError("Please select at least an occasion and relationship.");
       return;
     }
+
+    trackGiftSearch({ occasion, recipientType: relationship });
 
     const context = buildSearchContext();
     const version = ++searchVersion.current;
@@ -581,6 +584,7 @@ export default function Home() {
                   href={amazonLink(idea.searchQuery)}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackRetailerClick({ retailer: "Amazon", giftTitle: idea.title })}
                   className="flex items-center justify-center gap-2 w-full bg-amber-400 hover:bg-amber-500 text-black font-semibold py-3.5 rounded-xl transition"
                 >
                   Search on Amazon
@@ -590,6 +594,7 @@ export default function Home() {
                   href={walmartLink(idea.searchQuery)}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackRetailerClick({ retailer: "Walmart", giftTitle: idea.title })}
                   className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-xl transition"
                 >
                   Search on Walmart
