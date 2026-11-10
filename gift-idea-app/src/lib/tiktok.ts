@@ -1,7 +1,7 @@
 import type { Occasion, Relationship } from "@/types";
 
 /** Public pixel id used when NEXT_PUBLIC_TIKTOK_PIXEL_ID is unset or invalid. */
-export const DEFAULT_TIKTOK_PIXEL_ID = "DBPI9LRC77UASCMHD690";
+export const DEFAULT_TIKTOK_PIXEL_ID = "DBPIPN3C77U4J2JR7E1G";
 
 const PIXEL_ID_PATTERN = /^[A-Za-z0-9]{1,64}$/;
 
