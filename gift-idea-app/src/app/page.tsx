@@ -26,6 +26,20 @@ const GENDERS = ["Male", "Female", "Unisex / Doesn't matter", "Prefer not to say
 
 type Step = "home" | "form" | "results" | "profiles";
 
+function unlockLimit(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 1 || value > 999) {
+    return null;
+  }
+  return value;
+}
+
+function unlockSuccessMessage(limit: number): string {
+  if (limit === 2) return "Basic plan unlocked — you can now save up to 2 profiles.";
+  if (limit === 5) return "Advanced plan unlocked — you can now save up to 5 profiles.";
+  if (limit === 999) return "Pro plan unlocked — unlimited profiles!";
+  return `Plan unlocked — you can now save up to ${limit} profiles.`;
+}
+
 export default function Home() {
   const [step, setStep] = useState<Step>("home");
   const [loading, setLoading] = useState(false);
@@ -47,7 +61,6 @@ export default function Home() {
   const [ageRange, setAgeRange] = useState("");
   const [gender, setGender] = useState("");
   const [birthday, setBirthday] = useState("");
-  const [address, setAddress] = useState("");
   const [interests, setInterests] = useState("");
   const [personality, setPersonality] = useState("");
   const [budget, setBudget] = useState("");
@@ -75,7 +88,6 @@ export default function Home() {
     setAgeRange("");
     setGender("");
     setBirthday("");
-    setAddress("");
     setInterests("");
     setPersonality("");
     setBudget("");
@@ -103,26 +115,37 @@ export default function Home() {
       )?.dislikedIdeas || [],
   });
 
-  const handleUnlock = () => {
-    const code = unlockCode.trim().toUpperCase();
-
-    if (code === "BASIC2") {
-      setProfileLimit(2);
-      localStorage.setItem("gift-limit", "2");
-      alert("Basic plan unlocked — you can now save up to 2 profiles.");
-    } else if (code === "ADVANCED5") {
-      setProfileLimit(5);
-      localStorage.setItem("gift-limit", "5");
-      alert("Advanced plan unlocked — you can now save up to 5 profiles.");
-    } else if (code === "PROUNLIMITED") {
-      setProfileLimit(999);
-      localStorage.setItem("gift-limit", "999");
-      alert("Pro plan unlocked — unlimited profiles!");
-    } else {
+  const handleUnlock = async () => {
+    const code = unlockCode.trim();
+    if (!code) {
       alert("Invalid code. Please check and try again.");
+      setUnlockCode("");
+      return;
     }
 
-    setUnlockCode("");
+    try {
+      const res = await fetch("/api/unlock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = (await res.json().catch(() => null)) as
+        | { ok?: unknown; profileLimit?: unknown }
+        | null;
+      const limit = res.ok && data?.ok === true ? unlockLimit(data.profileLimit) : null;
+      if (limit === null) {
+        alert("Invalid code. Please check and try again.");
+        return;
+      }
+
+      setProfileLimit(limit);
+      localStorage.setItem("gift-limit", String(limit));
+      alert(unlockSuccessMessage(limit));
+    } catch {
+      alert("Invalid code. Please check and try again.");
+    } finally {
+      setUnlockCode("");
+    }
   };
 
   const handleGenerate = async () => {
@@ -234,7 +257,6 @@ export default function Home() {
       ageRange,
       gender,
       birthday,
-      address,
       interests,
       personality,
       budget,
@@ -257,7 +279,6 @@ export default function Home() {
     setAgeRange(p.ageRange);
     setGender(p.gender || "");
     setBirthday(p.birthday || "");
-    setAddress(p.address || "");
     setInterests(p.interests);
     setPersonality(p.personality);
     setBudget(p.budget);
@@ -476,10 +497,6 @@ export default function Home() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Birthday (optional)</label>
             <input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Address (optional)</label>
-            <textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street, City, State, ZIP" rows={2} className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Age range</label>
