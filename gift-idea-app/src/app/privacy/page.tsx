@@ -1,5 +1,9 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import {
+  AMAZON_ASSOCIATES_DISCLOSURE,
+  GENERAL_AFFILIATE_DISCLOSURE,
+} from "@/lib/affiliate-disclosure";
 
 export const metadata = {
   title: "Privacy Policy – GiftIdea",
@@ -18,7 +22,7 @@ export default function PrivacyPage() {
       </Link>
 
       <h1 className="text-3xl font-bold mb-2">Privacy Policy</h1>
-      <p className="text-gray-500 text-sm mb-8">Last updated: November 1, 2026</p>
+      <p className="text-gray-500 text-sm mb-8">Last updated: November 12, 2026</p>
 
       <div className="prose prose-sm space-y-6 text-gray-700 leading-relaxed">
         <section>
@@ -67,11 +71,10 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">5. Affiliate Links</h2>
           <p>
-            GiftIdea participates in the Amazon Associates Program. 
-            Some links in the app are affiliate links. This means we may earn a small commission if you click a link and make a purchase on Amazon, at no extra cost to you.
+            GiftIdea participates in affiliate programs, including the Amazon Associates Program and the impact.com partner network (retailers such as Walmart and Target). {GENERAL_AFFILIATE_DISCLOSURE}
           </p>
           <p className="mt-2">
-            <strong>As an Amazon Associate I earn from qualifying purchases.</strong>
+            <strong>{AMAZON_ASSOCIATES_DISCLOSURE}</strong>
           </p>
         </section>
 
@@ -115,9 +118,10 @@ export default function PrivacyPage() {
         </section>
       </div>
 
-      <div className="mt-12 pt-6 border-t text-sm text-gray-500">
+      <div className="mt-12 pt-6 border-t text-sm leading-relaxed text-gray-700 space-y-2">
+        <p>{GENERAL_AFFILIATE_DISCLOSURE}</p>
         <p>
-          <strong>Amazon Associates Disclosure:</strong> As an Amazon Associate I earn from qualifying purchases.
+          <strong>Amazon Associates Disclosure:</strong> {AMAZON_ASSOCIATES_DISCLOSURE}
         </p>
       </div>
     </div>
