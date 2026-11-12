@@ -6,6 +6,7 @@ import { Gift, Sparkles, Heart, ArrowRight, ArrowLeft, Loader2, ExternalLink, Sa
 import Link from "next/link";
 import { GiftIdea, RecipientProfile, Occasion, Relationship } from "@/types";
 import { getSavedProfiles, saveProfile, deleteProfile } from "@/lib/storage";
+import { AffiliateDisclosure } from "@/components/AffiliateDisclosure";
 import { appendUniqueGiftIdeas, buildLoadMorePayload, type GiftSearchContext } from "@/lib/gift-ideas";
 import { trackGiftSearch, trackRetailerClick } from "@/lib/tiktok";
 
@@ -421,9 +422,11 @@ export default function Home() {
               </div>
             </div>
           )}
-          <footer className="mt-16 text-center text-xs text-gray-400 space-y-1.5">
-            <p>As an Amazon Associate I earn from qualifying purchases.</p>
-            <Link href="/privacy" className="underline hover:text-violet-600">Privacy Policy</Link>
+          <footer className="mt-16 text-center text-sm leading-relaxed text-gray-700 space-y-2">
+            <AffiliateDisclosure variant="footer" />
+            <Link href="/privacy" className="inline-block text-violet-700 underline hover:text-violet-900">
+              Privacy Policy
+            </Link>
           </footer>
         </main>
       </div>
@@ -558,7 +561,7 @@ export default function Home() {
 
       <div className="max-w-lg mx-auto px-4 pt-6">
         {recipientName && (
-          <div className="mb-6">
+          <div className="mb-4">
             <p className="text-sm text-gray-500">Personalized ideas for</p>
             <h2 className="text-xl font-semibold text-gray-900">
               {recipientName}
@@ -566,6 +569,8 @@ export default function Home() {
             </h2>
           </div>
         )}
+
+        <AffiliateDisclosure />
 
         <div className="space-y-5">
           {ideas.map((idea, idx) => (
