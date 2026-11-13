@@ -22,7 +22,7 @@ export default function PrivacyPage() {
       </Link>
 
       <h1 className="text-3xl font-bold mb-2">Privacy Policy</h1>
-      <p className="text-gray-500 text-sm mb-8">Last updated: November 12, 2026</p>
+      <p className="text-gray-500 text-sm mb-8">Last updated: November 13, 2026</p>
 
       <div className="prose prose-sm space-y-6 text-gray-700 leading-relaxed">
         <section>
@@ -45,6 +45,12 @@ export default function PrivacyPage() {
             </li>
             <li>
               <strong>Usage data</strong>: Basic technical information such as browser type and pages visited may be collected by our hosting provider (Vercel) for performance and security purposes.
+            </li>
+            <li>
+              <strong>Anonymous search count</strong>: A random id is stored in a cookie so we can count free gift searches. That count is stored on our server. The record does not include your name or email.
+            </li>
+            <li>
+              <strong>Unlock or purchase status</strong>: A valid unlock code or a completed purchase is stored against that same anonymous id so the free-search limit no longer applies.
             </li>
           </ul>
         </section>
@@ -81,9 +87,13 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">6. Cookies and Local Storage</h2>
           <p>
-            The app uses your browser’s localStorage to save recipient profiles if you choose to save them. 
-            This data stays on your device and is not transmitted to our servers. 
-            You can clear it at any time by clearing your browser data or deleting the profiles inside the app.
+            The app uses your browser’s localStorage to save recipient profiles if you choose to save them.
+            Those profiles stay on your device. You can clear them by clearing your browser data or deleting the profiles inside the app.
+          </p>
+          <p className="mt-2">
+            We also set a cookie with a random visitor id. The signed copy is kept private from page scripts. It is how we count free searches.
+            A separate daily limit is kept for each network connection, stored as a one-way hash of the network address.
+            Clearing cookies or opening a private window starts a new visitor id. The daily network limit still applies.
           </p>
         </section>
 

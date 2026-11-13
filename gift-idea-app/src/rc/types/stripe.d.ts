@@ -6,6 +6,7 @@ declare namespace JSX {
     > & {
       "pricing-table-id": string;
       "publishable-key": string;
+      "client-reference-id"?: string;
     };
   }
 }

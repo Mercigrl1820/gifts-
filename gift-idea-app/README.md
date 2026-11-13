@@ -68,6 +68,54 @@ Your app is now live!
 
 ---
 
+## Free search limit
+
+Each visitor can run a few gift searches for free. After that, the existing upgrade window opens with the message “You’ve used your 2 free searches.” The number follows the setting below. The count is kept on the server, so a private window or a cleared browser does not start the allowance over.
+
+The limit stays **off** until Redis and the cookie secret are set. Searches keep working, and the server logs a warning. Add these in the Vercel project (Preview first, then Production) before you expect the limit to turn on. Do not put the secret in the code, and do not commit it.
+
+### Required before the limit turns on
+
+1. **Upstash Redis** from the Vercel Marketplace (`vercel integration add upstash`, or the Marketplace page in the dashboard). That integration fills in one of these pairs:
+   - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
+   - or the older names `KV_REST_API_URL` and `KV_REST_API_TOKEN`
+2. **`GIFT_VISITOR_COOKIE_SECRET`**: a long random string (at least 32 characters). It signs the visitor cookie. If you change it later, everyone gets a new visitor id.
+
+### Optional settings
+
+| Name | Default | What it does |
+| --- | --- | --- |
+| `FREE_SEARCH_LIMIT` | `2` | How many gift searches a visitor gets. “Load more gifts” is not included unless the flag below is turned on. |
+| `FREE_SEARCH_RESET` | `never` | `never` keeps the count. `daily` starts it over each UTC day. |
+| `FREE_SEARCH_IP_DAILY_CAP` | `20` | How many gift generations one network connection can run per UTC day, including “Load more gifts”. This is the backstop when cookies are cleared. |
+| `FREE_SEARCH_COUNT_LOAD_MORE` | `false` | Set to `true` if “Load more gifts” should use up a free search. |
+| `STRIPE_WEBHOOK_SECRET` | unset | Lets Stripe tell the site that a payment finished, so that visitor skips the search limit. |
+| `STRIPE_SECRET_KEY` | unset | Lets the site double-check a checkout when the shopper comes back. |
+
+A valid unlock code also skips the search limit, once Redis and the cookie secret are set. The code is still checked only on the server.
+
+### Stripe, so a payment skips the limit
+
+In the Stripe Dashboard:
+
+1. Open the pricing table and set the confirmation page to your site address. Stripe adds `session_id` when the shopper returns, which records the purchase.
+2. Add a webhook endpoint: `https://your-domain/api/stripe/webhook`
+3. Subscribe it to `checkout.session.completed` and `checkout.session.async_payment_succeeded`
+4. Copy the webhook signing secret into `STRIPE_WEBHOOK_SECRET`, and the secret key into `STRIPE_SECRET_KEY`
+
+The pricing table sends the visitor’s anonymous id with the checkout. The site stores “paid” against that id after Stripe’s signature checks out. Shopper email addresses are not saved for this.
+
+### How to try it on a preview
+
+1. Add the Upstash integration and `GIFT_VISITOR_COOKIE_SECRET` to the **Preview** environment. Leave Production alone until you like the preview.
+2. Open the preview link, run a search, then run a second search. Both should return ideas.
+3. Run a third search. The upgrade window should open and say you’ve used your 2 free searches. No new ideas are generated for that click.
+4. “Load more gifts” on a result you already have should still work.
+5. Enter a valid unlock code (one already saved in `GIFT_UNLOCK_CODES`), then search again. Ideas should come back.
+6. Until the Redis variables and the cookie secret exist, the preview keeps allowing searches. That is intentional.
+
+---
+
 ### 4. Add your Amazon affiliate tag (so you earn money)
 
 1. Open the file `src/app/page.tsx` on GitHub
