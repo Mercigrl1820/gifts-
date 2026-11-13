@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import Script from "next/script";
+import { useState, useEffect, useRef } from "react";
 import { Gift, Sparkles, Heart, ArrowRight, ArrowLeft, Loader2, ExternalLink, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { GiftIdea, RecipientProfile, Occasion, Relationship } from "@/types";
 import { getSavedProfiles, saveProfile, deleteProfile } from "@/lib/storage";
 import { AffiliateDisclosure } from "@/components/AffiliateDisclosure";
+import { PricingModal } from "@/components/PricingModal";
 import { appendUniqueGiftIdeas, buildLoadMorePayload, type GiftSearchContext } from "@/lib/gift-ideas";
 import { trackGiftSearch, trackRetailerClick } from "@/lib/tiktok";
+import { trackLimitHit, trackPricingModalOpened, trackPurchase, type PricingOpenReason } from "@/lib/funnel";
+import { freeSearchLimitMessage, isSearchLimitPayload, readFreeSearchLimit } from "@/lib/free-search-message";
+import { readPublicVisitorId } from "@/lib/public-visitor-id";
 
 const OCCASIONS: Occasion[] = [
   "Birthday", "Anniversary", "Christmas", "Valentine's Day",
@@ -53,6 +56,8 @@ export default function Home() {
   const loadMoreLock = useRef(false);
   const [savedProfiles, setSavedProfiles] = useState<RecipientProfile[]>([]);
   const [showPricing, setShowPricing] = useState(false);
+  const [pricingMessage, setPricingMessage] = useState<string | null>(null);
+  const [visitorId, setVisitorId] = useState("");
   const [unlockCode, setUnlockCode] = useState("");
   const [profileLimit, setProfileLimit] = useState(1);
 
@@ -74,7 +79,61 @@ export default function Home() {
     setSavedProfiles(getSavedProfiles());
     const savedLimit = localStorage.getItem("gift-limit");
     if (savedLimit) setProfileLimit(Number(savedLimit));
+    setVisitorId(readPublicVisitorId());
+
+    const sessionId = new URLSearchParams(window.location.search).get("session_id");
+    if (!sessionId || !/^cs_[A-Za-z0-9_]{8,200}$/.test(sessionId)) return;
+
+    const storageKey = `gift-purchase-tracked:${sessionId}`;
+    try {
+      if (window.sessionStorage.getItem(storageKey) === "1") return;
+    } catch {
+      // Private mode can block sessionStorage. Still try to confirm the payment.
+    }
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/billing/confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId }),
+        });
+        const data = (await res.json().catch(() => null)) as { paid?: unknown } | null;
+        if (cancelled || data?.paid !== true) return;
+        try {
+          window.sessionStorage.setItem(storageKey, "1");
+        } catch {
+          // The pixel event still fires once for this page load.
+        }
+        trackPurchase();
+      } catch {
+        // A failed confirmation leaves the page usable. Stripe's webhook can still unlock the visitor.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  const openPricing = (reason: PricingOpenReason, message?: string) => {
+    setVisitorId(readPublicVisitorId());
+    setPricingMessage(message ?? null);
+    setShowPricing(true);
+    trackPricingModalOpened(reason);
+  };
+
+  const closePricing = () => {
+    setShowPricing(false);
+    setPricingMessage(null);
+  };
+
+  const showSearchLimit = (data: { limit?: unknown }) => {
+    const limit = readFreeSearchLimit(data.limit);
+    trackLimitHit(limit);
+    openPricing("search_limit", freeSearchLimitMessage(limit));
+  };
 
   const resetForm = () => {
     searchVersion.current += 1;
@@ -174,9 +233,19 @@ export default function Home() {
         body: JSON.stringify(context),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
       if (searchVersion.current !== version) return;
-      if (!res.ok) throw new Error(data.error || "Something went wrong");
+      if (isSearchLimitPayload(res.status, data)) {
+        showSearchLimit(data);
+        return;
+      }
+      if (!res.ok) {
+        const message =
+          data && typeof data === "object" && "error" in data && typeof data.error === "string"
+            ? data.error
+            : "";
+        throw new Error(message || "Something went wrong");
+      }
 
       setSearchContext(context);
       setIdeas(Array.isArray(data.ideas) ? data.ideas : []);
@@ -209,6 +278,10 @@ export default function Home() {
       });
       const data = await res.json().catch(() => ({}));
       if (searchVersion.current !== version) return;
+      if (isSearchLimitPayload(res.status, data)) {
+        showSearchLimit(data);
+        return;
+      }
       if (!res.ok) {
         const message =
           data && typeof data.error === "string" && data.error.trim()
@@ -246,7 +319,7 @@ export default function Home() {
           ? "Free plan allows 1 profile. Upgrade to save more."
           : `Your plan allows up to ${profileLimit === 999 ? "unlimited" : profileLimit} profiles. Upgrade for more.`
       );
-      setShowPricing(true);
+      openPricing("profile_limit");
       return;
     }
 
@@ -385,7 +458,7 @@ export default function Home() {
             </button>
           )}
           <div className="mt-8">
-            <button onClick={() => setShowPricing(true)} className="w-full border border-violet-200 bg-white hover:bg-violet-50 text-violet-700 font-medium py-3.5 rounded-2xl transition">
+            <button onClick={() => openPricing("upgrade")} className="w-full border border-violet-200 bg-white hover:bg-violet-50 text-violet-700 font-medium py-3.5 rounded-2xl transition">
               Upgrade — More Saved Profiles
             </button>
           </div>
@@ -410,17 +483,11 @@ export default function Home() {
           </div>
 
           {showPricing && (
-            <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 relative shadow-xl">
-                <button onClick={() => setShowPricing(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl">×</button>
-                <h2 className="text-xl font-bold text-center mb-5">Upgrade Your Plan</h2>
-                <Script async src="https://js.stripe.com/v3/pricing-table.js" />
-                {React.createElement("stripe-pricing-table", {
-                  "pricing-table-id": "prctbl_1UXXKEIAYv4F4L27F0BTqq2f",
-                  "publishable-key": "pk_live_51UXPJjIAYv4F4L270jGtNXObsHUurmwCi94JsfZ3kjVQWlvZiGyKqpCeW24PeReLTqXm4vA8OZ7L7qLQRGxPHxCU00WsbwFrBr",
-                })}
-              </div>
-            </div>
+            <PricingModal
+              message={pricingMessage}
+              clientReferenceId={visitorId}
+              onClose={closePricing}
+            />
           )}
           <footer className="mt-16 text-center text-sm leading-relaxed text-gray-700 space-y-2">
             <AffiliateDisclosure variant="footer" />
@@ -533,6 +600,13 @@ export default function Home() {
           </div>
           {error && <div className="bg-red-50 text-red-700 text-sm p-3.5 rounded-xl border border-red-100">{error}</div>}
         </div>
+        {showPricing && (
+          <PricingModal
+            message={pricingMessage}
+            clientReferenceId={visitorId}
+            onClose={closePricing}
+          />
+        )}
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t">
           <div className="max-w-lg mx-auto">
             <button onClick={handleGenerate} disabled={loading} className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-60 transition">
@@ -674,6 +748,13 @@ export default function Home() {
           Start a new search
         </button>
       </div>
+      {showPricing && (
+        <PricingModal
+          message={pricingMessage}
+          clientReferenceId={visitorId}
+          onClose={closePricing}
+        />
+      )}
     </div>
   );
 }

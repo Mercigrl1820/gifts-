@@ -45,7 +45,12 @@ declare global {
   }
 }
 
-export type TikTokTrackedEvent = "Search" | "ClickButton";
+export type TikTokTrackedEvent =
+  | "Search"
+  | "ClickButton"
+  | "LimitHit"
+  | "PricingModalOpened"
+  | "CompletePayment";
 
 export type RetailerName = "Amazon" | "Walmart";
 
