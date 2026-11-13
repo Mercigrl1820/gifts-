@@ -11,7 +11,9 @@ import PrivacyPage from "../src/app/privacy/page";
 import {
   AMAZON_ASSOCIATES_DISCLOSURE,
   GENERAL_AFFILIATE_DISCLOSURE,
+  RESULTS_AFFILIATE_DISCLOSURE,
 } from "../src/lib/affiliate-disclosure";
+import { CONTACT_EMAIL } from "../src/lib/site";
 import { idea, jsonResponse } from "./fixtures";
 
 vi.mock("next/link", () => ({
@@ -50,11 +52,13 @@ describe("Affiliate disclosure", () => {
     expect(notice.className).not.toMatch(/text-gray-400/);
     expect(notice.className).not.toMatch(/\bsr-only\b/);
     expect(notice.closest("footer")).not.toBeNull();
+    expect(screen.getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/contact");
+    expect(screen.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about");
     expect(screen.getByRole("link", { name: /privacy policy/i })).toHaveAttribute("href", "/privacy");
     expect(screen.getByRole("link", { name: /terms of service/i })).toHaveAttribute("href", "/terms");
-    expect(screen.getByRole("link", { name: "hello@gifts4you.app" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: CONTACT_EMAIL })).toHaveAttribute(
       "href",
-      "mailto:hello@gifts4you.app",
+      `mailto:${CONTACT_EMAIL}`,
     );
     expect(screen.getByText("Gifts4You is operated by Nicholas Daniel")).toBeInTheDocument();
   });
@@ -80,14 +84,25 @@ describe("Affiliate disclosure", () => {
     expect(notice).toBeTruthy();
     expect(notice).toHaveTextContent(GENERAL_AFFILIATE_DISCLOSURE);
     expect(notice).toHaveTextContent(AMAZON_ASSOCIATES_DISCLOSURE);
+    expect(notice).not.toHaveTextContent(RESULTS_AFFILIATE_DISCLOSURE);
     expect(notice?.className).toMatch(/text-violet-950/);
     expect(notice?.className).not.toMatch(/text-xs|text-gray-400|sr-only/);
     expect(screen.getByRole("contentinfo")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /terms of service/i })).toHaveAttribute("href", "/terms");
 
+    const nearLinks = screen.getByText(RESULTS_AFFILIATE_DISCLOSURE, { exact: false });
+    expect(nearLinks.closest("footer")).toBeNull();
+    expect(nearLinks.className).toMatch(/text-sm/);
+    expect(nearLinks.className).toMatch(/text-gray-600/);
+    const aboutNearLinks = screen.getAllByRole("link", { name: "About" }).find((link) => link.closest("footer") === null);
+    expect(aboutNearLinks).toHaveAttribute("href", "/about");
+    expect(nearLinks.contains(aboutNearLinks as Node)).toBe(true);
+
     const amazon = screen.getAllByRole("link", { name: /search on amazon/i })[0];
     const walmart = screen.getAllByRole("link", { name: /search on walmart/i })[0];
     expect(precedes(notice as HTMLElement, amazon)).toBe(true);
+    expect(precedes(nearLinks, amazon)).toBe(true);
+    expect(precedes(nearLinks, walmart)).toBe(true);
     expect(precedes(notice as HTMLElement, walmart)).toBe(true);
     expect(amazon).toHaveAttribute("rel", "sponsored noopener noreferrer");
     expect(walmart).toHaveAttribute("rel", "sponsored noopener noreferrer");
@@ -106,7 +121,9 @@ describe("Affiliate disclosure", () => {
     expect(screen.getByText(/do not use Target or impact\.com links/i)).toBeInTheDocument();
     expect(screen.queryByText(/impact\.com partner network/i)).not.toBeInTheDocument();
     expect(screen.getAllByText("Gifts4You is operated by Nicholas Daniel").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByRole("link", { name: "hello@gifts4you.app" }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole("link", { name: CONTACT_EMAIL }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/contact");
+    expect(screen.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about");
     expect(document.body.textContent).not.toMatch(/nkd23@comcast\.net/i);
     expect(document.body.textContent).not.toMatch(/GiftIdea \(/);
   });

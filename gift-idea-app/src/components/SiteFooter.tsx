@@ -14,6 +14,12 @@ export function SiteFooter({ className }: { className?: string }) {
         </a>
       </p>
       <p className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+        <Link href="/contact" className="text-violet-700 underline hover:text-violet-900">
+          Contact
+        </Link>
+        <Link href="/about" className="text-violet-700 underline hover:text-violet-900">
+          About
+        </Link>
         <Link href="/privacy" className="text-violet-700 underline hover:text-violet-900">
           Privacy Policy
         </Link>

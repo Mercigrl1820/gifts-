@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { Gift, Sparkles, Heart, ArrowRight, ArrowLeft, Loader2, ExternalLink, Save, Trash2 } from "lucide-react";
 import { GiftIdea, RecipientProfile, Occasion, Relationship } from "@/types";
 import { getSavedProfiles, saveProfile, deleteProfile } from "@/lib/storage";
 import { AffiliateDisclosure } from "@/components/AffiliateDisclosure";
+import { RESULTS_AFFILIATE_DISCLOSURE } from "@/lib/affiliate-disclosure";
 import { PricingModal } from "@/components/PricingModal";
 import { SiteFooter } from "@/components/SiteFooter";
 import { PURCHASE_ACKNOWLEDGMENT } from "@/lib/plan-terms";
@@ -691,6 +693,12 @@ export default function Home() {
         ) : null}
 
         <AffiliateDisclosure />
+        <p className="mb-5 text-sm leading-relaxed text-gray-600">
+          {RESULTS_AFFILIATE_DISCLOSURE}{" "}
+          <Link href="/about" className="text-violet-700 underline hover:text-violet-900">
+            About
+          </Link>
+        </p>
 
         <div className="space-y-5">
           {ideas.map((idea, idx) => (
