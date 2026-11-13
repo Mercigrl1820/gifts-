@@ -237,8 +237,9 @@ For each gift idea, return:
 - title (short name of the gift)
 - description (1-2 sentences)
 - whyItFits (why this is a good match)
-- estimatedPrice (e.g. "$25–$40")
 - searchQuery (a good search phrase to use on Amazon or Walmart)
+
+Do not include a price, a price range, or a dollar amount.
 
 Return the response as a valid JSON object with this exact structure:
 {
@@ -247,7 +248,6 @@ Return the response as a valid JSON object with this exact structure:
       "title": "",
       "description": "",
       "whyItFits": "",
-      "estimatedPrice": "",
       "searchQuery": ""
     }
   ]

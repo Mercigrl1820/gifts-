@@ -39,7 +39,7 @@ export function redisSetupWarning(env: Record<string, string | undefined> = proc
   ];
   const partial = names.some((name) => nonEmpty(env[name]) !== "");
   if (partial) {
-    return "[search-limit] Upstash Redis env vars are incomplete. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN, or KV_REST_API_URL and KV_REST_API_TOKEN. Allowing searches.";
+    return "[search-limit] Upstash Redis env vars are incomplete. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN, or KV_REST_API_URL and KV_REST_API_TOKEN. Blocking searches.";
   }
-  return "[search-limit] Upstash Redis env vars are not set. Allowing searches until the Vercel Marketplace Upstash integration is connected.";
+  return "[search-limit] Upstash Redis env vars are not set. Blocking searches until the Vercel Marketplace Upstash integration is connected.";
 }

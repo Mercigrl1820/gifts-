@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { processGenerateRequest } from "@/lib/generate-request";
 import { validateGenerateRequest } from "@/lib/gift-ideas";
-import { clientIp, enforceSearchLimit, type SearchLimitDecision } from "@/lib/search-limit";
+import {
+  clientIp,
+  enforceSearchLimit,
+  SEARCH_UNAVAILABLE_MESSAGE,
+  type SearchLimitDecision,
+} from "@/lib/search-limit";
 import { readSearchLimitConfig } from "@/lib/search-limit-config";
 import { createSearchLimitStore } from "@/lib/search-limit-store";
 import { applyVisitorCookies, requestIsSecure } from "@/lib/visitor-cookie";
@@ -27,9 +32,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: validated.error }, { status: 400 });
   }
 
-  // Count (or refuse) before the model is called. Missing Redis or cookie
-  // secret fails open inside enforceSearchLimit so an unconfigured deploy
-  // still returns gift ideas.
+  // Count (or refuse) before the model is called. Missing Redis, a missing
+  // cookie secret, or a counter error refuses the search.
   const decision = await enforceSearchLimit({
     store: createSearchLimitStore(),
     config: readSearchLimitConfig(),
@@ -37,6 +41,17 @@ export async function POST(request: Request) {
     ip: clientIp(request),
     isLoadMore: validated.value.excludeTitles.length > 0,
   });
+
+  if (!decision.allowed && decision.reason === "unavailable") {
+    return withVisitorCookie(
+      NextResponse.json(
+        { error: SEARCH_UNAVAILABLE_MESSAGE },
+        { status: 503, headers: { "Cache-Control": "no-store" } },
+      ),
+      decision,
+      request,
+    );
+  }
 
   if (!decision.allowed) {
     return withVisitorCookie(

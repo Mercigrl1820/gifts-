@@ -40,7 +40,6 @@ Return ONLY valid JSON in this exact shape (no markdown, no extra text):
       "title": "Short gift name",
       "description": "1-2 sentence description of the gift",
       "whyItFits": "Why this is a great match for this person and occasion",
-      "estimatedPrice": "$XX - $YY",
       "searchQuery": "exact search terms to find this on Amazon",
       "category": "e.g. Experience, Home, Fashion, Tech, Food, etc."
     }

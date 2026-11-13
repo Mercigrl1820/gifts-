@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Gift, Sparkles, Heart, ArrowRight, ArrowLeft, Loader2, ExternalLink, Save, Trash2 } from "lucide-react";
-import Link from "next/link";
 import { GiftIdea, RecipientProfile, Occasion, Relationship } from "@/types";
 import { getSavedProfiles, saveProfile, deleteProfile } from "@/lib/storage";
 import { AffiliateDisclosure } from "@/components/AffiliateDisclosure";
 import { PricingModal } from "@/components/PricingModal";
+import { SiteFooter } from "@/components/SiteFooter";
+import { PURCHASE_ACKNOWLEDGMENT } from "@/lib/plan-terms";
 import { appendUniqueGiftIdeas, buildLoadMorePayload, type GiftSearchContext } from "@/lib/gift-ideas";
 import { trackGiftSearch, trackRetailerClick } from "@/lib/tiktok";
 import { trackLimitHit, trackPricingModalOpened, trackPurchase, type PricingOpenReason } from "@/lib/funnel";
@@ -60,6 +61,8 @@ export default function Home() {
   const [visitorId, setVisitorId] = useState("");
   const [unlockCode, setUnlockCode] = useState("");
   const [profileLimit, setProfileLimit] = useState(1);
+  const [adultConfirmed, setAdultConfirmed] = useState(false);
+  const [purchaseNote, setPurchaseNote] = useState("");
 
   const [recipientName, setRecipientName] = useState("");
   const [occasion, setOccasion] = useState<Occasion | "">("");
@@ -107,6 +110,7 @@ export default function Home() {
           // The pixel event still fires once for this page load.
         }
         trackPurchase();
+        setPurchaseNote(PURCHASE_ACKNOWLEDGMENT);
       } catch {
         // A failed confirmation leaves the page usable. Stripe's webhook can still unlock the visitor.
       }
@@ -162,7 +166,7 @@ export default function Home() {
     relationship,
     ageRange,
     gender,
-    birthday,
+    birthday: ageRange === "Under 18" ? "" : birthday,
     interests,
     personality,
     budget,
@@ -213,6 +217,10 @@ export default function Home() {
       setError("Please select at least an occasion and relationship.");
       return;
     }
+    if (!adultConfirmed) {
+      setError("Please confirm that you are 18 or older.");
+      return;
+    }
 
     trackGiftSearch({ occasion, recipientType: relationship });
 
@@ -253,7 +261,7 @@ export default function Home() {
     } catch (err: unknown) {
       if (searchVersion.current !== version) return;
       const message = err instanceof Error ? err.message : "";
-      setError(message || "Failed to generate ideas. Check your OpenAI key.");
+      setError(message || "Could not generate gift ideas. Please try again.");
     } finally {
       if (searchVersion.current === version) setLoading(false);
     }
@@ -316,8 +324,8 @@ export default function Home() {
     if (savedProfiles.length >= profileLimit) {
       alert(
         profileLimit <= 1
-          ? "Free plan allows 1 profile. Upgrade to save more."
-          : `Your plan allows up to ${profileLimit === 999 ? "unlimited" : profileLimit} profiles. Upgrade for more.`
+          ? "This browser can save 1 profile. An unlock code can raise that number. A paid plan removes the free search limit."
+          : `This browser can save ${profileLimit === 999 ? "unlimited" : profileLimit} profiles.`
       );
       openPricing("profile_limit");
       return;
@@ -352,7 +360,7 @@ export default function Home() {
     setRelationship(p.relationship);
     setAgeRange(p.ageRange);
     setGender(p.gender || "");
-    setBirthday(p.birthday || "");
+    setBirthday(p.ageRange === "Under 18" ? "" : p.birthday || "");
     setInterests(p.interests);
     setPersonality(p.personality);
     setBudget(p.budget);
@@ -457,16 +465,23 @@ export default function Home() {
               Or use a saved profile
             </button>
           )}
+          {purchaseNote ? (
+            <p role="status" className="mt-6 rounded-xl border border-violet-200 bg-violet-50 p-3 text-sm leading-relaxed text-violet-950">
+              {purchaseNote}
+            </p>
+          ) : null}
+
           <div className="mt-8">
-            <button onClick={() => openPricing("upgrade")} className="w-full border border-violet-200 bg-white hover:bg-violet-50 text-violet-700 font-medium py-3.5 rounded-2xl transition">
-              Upgrade — More Saved Profiles
+            <button type="button" onClick={() => openPricing("upgrade")} className="w-full border border-violet-200 bg-white hover:bg-violet-50 text-violet-700 font-medium py-3.5 rounded-2xl transition">
+              Upgrade — unlimited gift searches
             </button>
           </div>
 
           <div className="mt-6 text-center">
-            <p className="text-xs text-gray-500 mb-2">Have an unlock code?</p>
+            <label htmlFor="unlock-code" className="mb-2 block text-xs text-gray-500">Have an unlock code?</label>
             <div className="flex gap-2 max-w-xs mx-auto">
               <input
+                id="unlock-code"
                 type="text"
                 value={unlockCode}
                 onChange={(e) => setUnlockCode(e.target.value)}
@@ -489,12 +504,7 @@ export default function Home() {
               onClose={closePricing}
             />
           )}
-          <footer className="mt-16 text-center text-sm leading-relaxed text-gray-700 space-y-2">
-            <AffiliateDisclosure variant="footer" />
-            <Link href="/privacy" className="inline-block text-violet-700 underline hover:text-violet-900">
-              Privacy Policy
-            </Link>
-          </footer>
+          <SiteFooter />
         </main>
       </div>
     );
@@ -505,7 +515,7 @@ export default function Home() {
       <div className="min-h-screen bg-gray-50">
         <header className="bg-white border-b sticky top-0 z-10">
           <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
-            <button onClick={() => setStep("home")} className="p-2 -ml-2 rounded-full hover:bg-gray-100"><ArrowLeft className="w-5 h-5" /></button>
+            <button type="button" onClick={() => setStep("home")} aria-label="Back" className="p-2 -ml-2 rounded-full hover:bg-gray-100"><ArrowLeft className="w-5 h-5" /></button>
             <h1 className="font-semibold text-lg">Saved Profiles</h1>
           </div>
         </header>
@@ -518,12 +528,13 @@ export default function Home() {
                 <button onClick={() => loadProfile(p)} className="text-left flex-1">
                   <div className="font-semibold text-gray-900">{p.name}</div>
                   <div className="text-sm text-gray-500 mt-0.5">{p.relationship} · {p.occasion}</div>
-                  {p.birthday && <div className="text-xs text-gray-400 mt-1">Birthday: {p.birthday}</div>}
+                  {p.birthday && p.ageRange !== "Under 18" && <div className="text-xs text-gray-400 mt-1">Birthday: {p.birthday}</div>}
                 </button>
-                <button onClick={() => handleDeleteProfile(p.id)} className="p-2 text-gray-400 hover:text-red-500 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                <button type="button" onClick={() => handleDeleteProfile(p.id)} aria-label={`Delete ${p.name}`} className="p-2 text-gray-400 hover:text-red-500 rounded-lg"><Trash2 className="w-4 h-4" /></button>
               </div>
             ))
           )}
+          <SiteFooter className="mt-8 space-y-3 px-1 text-center text-sm leading-relaxed text-gray-700" />
         </div>
       </div>
     );
@@ -531,14 +542,17 @@ export default function Home() {
 
   if (step === "form") {
     return (
-      <div className="min-h-screen bg-gray-50 pb-28">
+      <div className="min-h-screen bg-gray-50 pb-44">
         <header className="bg-white border-b sticky top-0 z-10">
           <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
-            <button onClick={() => setStep("home")} className="p-2 -ml-2 rounded-full hover:bg-gray-100"><ArrowLeft className="w-5 h-5" /></button>
+            <button type="button" onClick={() => setStep("home")} aria-label="Back" className="p-2 -ml-2 rounded-full hover:bg-gray-100"><ArrowLeft className="w-5 h-5" /></button>
             <h1 className="font-semibold text-lg">Tell us about them</h1>
           </div>
         </header>
         <div className="max-w-lg mx-auto p-4 space-y-5">
+          <p className="rounded-xl border border-gray-200 bg-white p-3 text-sm leading-relaxed text-gray-700">
+            The details you enter are sent to an AI provider to create gift ideas. Don&apos;t enter a child&apos;s full name or birthday. A first name or nickname is enough.
+          </p>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Recipient’s name <span className="text-gray-400 font-normal">(recommended)</span></label>
             <input type="text" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} placeholder="e.g. Sarah" className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500" />
@@ -565,16 +579,31 @@ export default function Home() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Birthday (optional)</label>
-            <input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500" />
-          </div>
-          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Age range</label>
-            <select value={ageRange} onChange={(e) => setAgeRange(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500">
+            <select
+              value={ageRange}
+              onChange={(e) => {
+                const next = e.target.value;
+                setAgeRange(next);
+                if (next === "Under 18") setBirthday("");
+              }}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+            >
               <option value="">Select age range</option>
               {AGE_RANGES.map((a) => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
+          {ageRange === "Under 18" ? (
+            <p className="text-sm leading-relaxed text-gray-600">
+              Birthday isn&apos;t collected for anyone under 18. Don&apos;t enter a child&apos;s full name above.
+            </p>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Birthday (optional)</label>
+              <input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500" />
+              <p className="mt-1 text-xs text-gray-500">Skip this if the recipient is under 18.</p>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Interests & hobbies</label>
             <textarea value={interests} onChange={(e) => setInterests(e.target.value)} placeholder="e.g. loves cooking, hiking, sci-fi books, coffee" rows={3} className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none" />
@@ -598,7 +627,8 @@ export default function Home() {
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Anything else?</label>
             <textarea value={extraNotes} onChange={(e) => setExtraNotes(e.target.value)} placeholder="Recent life events, preferences..." rows={2} className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none" />
           </div>
-          {error && <div className="bg-red-50 text-red-700 text-sm p-3.5 rounded-xl border border-red-100">{error}</div>}
+          {error && <div role="alert" className="bg-red-50 text-red-700 text-sm p-3.5 rounded-xl border border-red-100">{error}</div>}
+          <SiteFooter className="mt-4 space-y-3 text-center text-sm leading-relaxed text-gray-700" />
         </div>
         {showPricing && (
           <PricingModal
@@ -607,9 +637,19 @@ export default function Home() {
             onClose={closePricing}
           />
         )}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t">
-          <div className="max-w-lg mx-auto">
-            <button onClick={handleGenerate} disabled={loading} className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-60 transition">
+        <div className="fixed bottom-0 left-0 right-0 border-t bg-white p-4">
+          <div className="mx-auto max-w-lg space-y-3">
+            <p className="text-xs leading-relaxed text-gray-600">Gifts4You is not for children under 13.</p>
+            <label className="flex items-start gap-2 text-sm font-medium text-gray-900">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={adultConfirmed}
+                onChange={(event) => setAdultConfirmed(event.target.checked)}
+              />
+              <span>I&apos;m 18 or older</span>
+            </label>
+            <button type="button" onClick={handleGenerate} disabled={loading} className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-60 transition">
               {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Generating ideas...</> : <><Sparkles className="w-5 h-5" /> Get gift ideas</>}
             </button>
           </div>
@@ -623,11 +663,11 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50 pb-12">
       <header className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
-          <button onClick={() => setStep("form")} className="p-2 -ml-2 rounded-full hover:bg-gray-100">
+          <button type="button" onClick={() => setStep("form")} aria-label="Back" className="p-2 -ml-2 rounded-full hover:bg-gray-100">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <h1 className="font-semibold text-lg">Gift Ideas</h1>
-          <button onClick={handleSaveProfile} className="p-2 text-violet-600 rounded-full hover:bg-violet-50">
+          <button type="button" onClick={handleSaveProfile} aria-label="Save profile" className="p-2 text-violet-600 rounded-full hover:bg-violet-50">
             <Save className="w-5 h-5" />
           </button>
         </div>
@@ -644,6 +684,12 @@ export default function Home() {
           </div>
         )}
 
+        {searchContext?.budget ? (
+          <p className="mb-4 text-sm text-gray-600">
+            Budget you entered: {searchContext.budget}. This is your budget, not a store price.
+          </p>
+        ) : null}
+
         <AffiliateDisclosure />
 
         <div className="space-y-5">
@@ -652,13 +698,10 @@ export default function Home() {
               key={idx}
               className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow"
             >
-              <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="mb-3">
                 <h3 className="font-semibold text-lg text-gray-900 leading-snug">
                   {idea.title}
                 </h3>
-                <span className="shrink-0 text-xs font-medium bg-violet-50 text-violet-700 px-3 py-1 rounded-full">
-                  {idea.estimatedPrice}
-                </span>
               </div>
 
               <p className="text-gray-600 text-[15px] leading-relaxed mb-4">
@@ -679,9 +722,9 @@ export default function Home() {
                 <a
                   href={amazonLink(idea.searchQuery)}
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel="sponsored noopener noreferrer"
                   onClick={() => trackRetailerClick({ retailer: "Amazon", giftTitle: idea.title })}
-                  className="flex items-center justify-center gap-2 w-full bg-amber-400 hover:bg-amber-500 text-black font-semibold py-3.5 rounded-xl transition"
+                  className="flex items-center justify-center gap-2 w-full bg-neutral-800 hover:bg-neutral-900 text-white font-semibold py-3.5 rounded-xl transition"
                 >
                   Search on Amazon
                   <ExternalLink className="w-4 h-4" />
@@ -689,9 +732,9 @@ export default function Home() {
                 <a
                   href={walmartLink(idea.searchQuery)}
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel="sponsored noopener noreferrer"
                   onClick={() => trackRetailerClick({ retailer: "Walmart", giftTitle: idea.title })}
-                  className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-xl transition"
+                  className="flex items-center justify-center gap-2 w-full border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-900 font-semibold py-3.5 rounded-xl transition"
                 >
                   Search on Walmart
                   <ExternalLink className="w-4 h-4" />
@@ -747,6 +790,8 @@ export default function Home() {
         >
           Start a new search
         </button>
+
+        <SiteFooter />
       </div>
       {showPricing && (
         <PricingModal

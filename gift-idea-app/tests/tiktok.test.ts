@@ -2,11 +2,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Occasion, Relationship } from "../src/types";
 import {
   DEFAULT_TIKTOK_PIXEL_ID,
+  resetTikTokConsentForTests,
   resolveTikTokPixelId,
+  startTikTokPixel,
   tiktokPixelBaseCode,
   trackGiftSearch,
   trackRetailerClick,
   trackTikTokEvent,
+  writeAdsConsent,
 } from "../src/lib/tiktok";
 
 const occasion: Occasion = "Birthday";
@@ -14,6 +17,8 @@ const recipientType: Relationship = "Friend";
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+  resetTikTokConsentForTests();
 });
 
 describe("TikTok pixel id", () => {
@@ -21,15 +26,22 @@ describe("TikTok pixel id", () => {
     vi.stubEnv("NEXT_PUBLIC_TIKTOK_PIXEL_ID", "");
     expect(DEFAULT_TIKTOK_PIXEL_ID).toBe("DBPIPN3C77U4J2JR7E1G");
     expect(resolveTikTokPixelId()).toBe("DBPIPN3C77U4J2JR7E1G");
-    expect(tiktokPixelBaseCode()).toContain("ttq.load('DBPIPN3C77U4J2JR7E1G');");
+    const code = tiktokPixelBaseCode();
+    expect(code).toContain("ttq.holdConsent();");
+    expect(code).toContain("gift_ads_consent=");
+    expect(code).toContain("globalPrivacyControl");
+    expect(code.indexOf("ttq.holdConsent();")).toBeLessThan(code.indexOf("ttq.load('DBPIPN3C77U4J2JR7E1G');"));
+    expect(code.indexOf("choice === \"granted\"")).toBeLessThan(code.indexOf("ttq.load('DBPIPN3C77U4J2JR7E1G');"));
   });
 
   it("uses NEXT_PUBLIC_TIKTOK_PIXEL_ID when it is a safe pixel id", () => {
     vi.stubEnv("NEXT_PUBLIC_TIKTOK_PIXEL_ID", "  ABC123pixel  ");
     expect(resolveTikTokPixelId()).toBe("ABC123pixel");
     const code = tiktokPixelBaseCode();
+    expect(code).toContain("ttq.holdConsent();");
     expect(code).toContain("ttq.load('ABC123pixel');");
     expect(code).toContain("ttq.page();");
+    expect(code.indexOf("ttq.holdConsent();")).toBeLessThan(code.indexOf("ttq.load('ABC123pixel');"));
     expect(code.indexOf("ttq.load('ABC123pixel');")).toBeLessThan(code.indexOf("ttq.page();"));
   });
 
@@ -42,6 +54,35 @@ describe("TikTok pixel id", () => {
 });
 
 describe("trackTikTokEvent", () => {
+  it("does not send an event before consent is granted", () => {
+    const track = vi.fn();
+    vi.stubGlobal("window", { ttq: { track } });
+    trackGiftSearch({ occasion, recipientType });
+    expect(track).not.toHaveBeenCalled();
+  });
+
+  it("does not send an event when Global Privacy Control is on", () => {
+    const track = vi.fn();
+    vi.stubGlobal("navigator", { globalPrivacyControl: true });
+    vi.stubGlobal("window", { ttq: { track } });
+    writeAdsConsent("granted");
+    trackGiftSearch({ occasion, recipientType });
+    expect(track).not.toHaveBeenCalled();
+  });
+
+  it("loads the pixel only after consent is granted", () => {
+    const pixel = { load: vi.fn(), page: vi.fn(), track: vi.fn(), grantConsent: vi.fn(), holdConsent: vi.fn() };
+    vi.stubGlobal("window", { ttq: pixel });
+    startTikTokPixel();
+    expect(pixel.load).not.toHaveBeenCalled();
+    expect(pixel.holdConsent).toHaveBeenCalled();
+    writeAdsConsent("granted");
+    startTikTokPixel();
+    expect(pixel.grantConsent).toHaveBeenCalled();
+    expect(pixel.load).toHaveBeenCalledWith("DBPIPN3C77U4J2JR7E1G");
+    expect(pixel.page).toHaveBeenCalledTimes(1);
+  });
+
   it("does nothing during SSR when window is missing", () => {
     expect(typeof window).toBe("undefined");
     expect(() => trackGiftSearch({ occasion, recipientType })).not.toThrow();
@@ -61,6 +102,7 @@ describe("trackTikTokEvent", () => {
   });
 
   it("swallows a throwing pixel and a throwing ttq getter", () => {
+    writeAdsConsent("granted");
     const track = vi.fn(() => {
       throw new Error("blocked");
     });
@@ -81,6 +123,7 @@ describe("trackTikTokEvent", () => {
   });
 
   it("sends Search with occasion and recipient type only", () => {
+    writeAdsConsent("granted");
     const track = vi.fn();
     const pixel = { track };
     vi.stubGlobal("window", { ttq: pixel });
@@ -102,6 +145,7 @@ describe("trackTikTokEvent", () => {
   });
 
   it("sends ClickButton with the retailer and gift title", () => {
+    writeAdsConsent("granted");
     const track = vi.fn();
     vi.stubGlobal("window", { ttq: { track } });
 
