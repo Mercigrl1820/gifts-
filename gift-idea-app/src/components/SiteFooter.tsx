@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AffiliateDisclosure } from "@/components/AffiliateDisclosure";
 import { ManageSubscriptionButton } from "@/components/ManageSubscriptionButton";
-import { CONTACT_EMAIL, OPERATOR_LINE } from "@/lib/site";
+import { SUPPORT_EMAIL, OPERATOR_LINE } from "@/lib/site";
 
 export function SiteFooter({ className }: { className?: string }) {
   return (
@@ -9,8 +9,8 @@ export function SiteFooter({ className }: { className?: string }) {
       <AffiliateDisclosure variant="footer" />
       <p>{OPERATOR_LINE}</p>
       <p>
-        <a className="text-violet-700 underline hover:text-violet-900" href={`mailto:${CONTACT_EMAIL}`}>
-          {CONTACT_EMAIL}
+        <a className="text-violet-700 underline hover:text-violet-900" href={`mailto:${SUPPORT_EMAIL}`}>
+          {SUPPORT_EMAIL}
         </a>
       </p>
       <p className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">

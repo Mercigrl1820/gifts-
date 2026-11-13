@@ -14,7 +14,7 @@ vi.mock("@/lib/search-limit-store", () => ({
 
 import { POST } from "../src/app/api/billing/portal/route";
 import { VISITOR_COOKIE_SECRET_ENV } from "../src/lib/search-limit-config";
-import { CONTACT_EMAIL } from "../src/lib/site";
+import { SUPPORT_EMAIL } from "../src/lib/site";
 import { STRIPE_SECRET_KEY_ENV } from "../src/lib/stripe-env";
 import { signVisitorCookie } from "../src/lib/visitor-cookie";
 
@@ -82,7 +82,7 @@ describe("POST /api/billing/portal", () => {
     );
     expect(response.status).toBe(502);
     const body = await response.json();
-    expect(body.error).toContain(CONTACT_EMAIL);
+    expect(body.error).toContain(SUPPORT_EMAIL);
     expect(JSON.stringify(body)).not.toMatch(/sk_live_secret|portal disabled/);
   });
 
@@ -92,7 +92,7 @@ describe("POST /api/billing/portal", () => {
     const response = await POST(new Request("https://preview.example/api/billing/portal", { method: "POST" }));
     expect(response.status).toBe(404);
     await expect(response.json()).resolves.toMatchObject({
-      error: expect.stringContaining(CONTACT_EMAIL),
+      error: expect.stringContaining(SUPPORT_EMAIL),
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });

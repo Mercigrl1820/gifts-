@@ -7,7 +7,7 @@ import "@testing-library/jest-dom/vitest";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import TermsPage from "../src/app/terms/page";
 import nextConfig from "../next.config";
-import { CONTACT_EMAIL } from "../src/lib/site";
+import { SUPPORT_EMAIL } from "../src/lib/site";
 
 vi.mock("next/link", () => ({
   default: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
@@ -28,8 +28,8 @@ describe("Terms of Service", () => {
     expect(screen.getByRole("heading", { name: "Terms of Service" })).toBeInTheDocument();
     expect(screen.getAllByText(/Gifts4You is operated by Nicholas Daniel/).length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText(/Nicholas Daniel, operating as Gifts4You/).length).toBeGreaterThanOrEqual(1);
-    expect(CONTACT_EMAIL).toBe("gifts4youapp@gifts4you.app");
-    expect(screen.getAllByRole("link", { name: CONTACT_EMAIL }).length).toBeGreaterThanOrEqual(1);
+    expect(SUPPORT_EMAIL).toBe("gifts4youapp@gifts4you.app");
+    expect(screen.getAllByRole("link", { name: SUPPORT_EMAIL }).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/contact");
     expect(screen.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about");
     expect(screen.getByRole("heading", { name: "$0.99 one-time" })).toBeInTheDocument();

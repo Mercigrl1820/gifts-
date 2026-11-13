@@ -13,7 +13,7 @@ import {
   GENERAL_AFFILIATE_DISCLOSURE,
   RESULTS_AFFILIATE_DISCLOSURE,
 } from "../src/lib/affiliate-disclosure";
-import { CONTACT_EMAIL } from "../src/lib/site";
+import { SUPPORT_EMAIL } from "../src/lib/site";
 import { idea, jsonResponse } from "./fixtures";
 
 vi.mock("next/link", () => ({
@@ -56,9 +56,9 @@ describe("Affiliate disclosure", () => {
     expect(screen.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about");
     expect(screen.getByRole("link", { name: /privacy policy/i })).toHaveAttribute("href", "/privacy");
     expect(screen.getByRole("link", { name: /terms of service/i })).toHaveAttribute("href", "/terms");
-    expect(screen.getByRole("link", { name: CONTACT_EMAIL })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: SUPPORT_EMAIL })).toHaveAttribute(
       "href",
-      `mailto:${CONTACT_EMAIL}`,
+      `mailto:${SUPPORT_EMAIL}`,
     );
     expect(screen.getByText("Gifts4You is operated by Nicholas Daniel")).toBeInTheDocument();
   });
@@ -121,7 +121,7 @@ describe("Affiliate disclosure", () => {
     expect(screen.getByText(/do not use Target or impact\.com links/i)).toBeInTheDocument();
     expect(screen.queryByText(/impact\.com partner network/i)).not.toBeInTheDocument();
     expect(screen.getAllByText("Gifts4You is operated by Nicholas Daniel").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByRole("link", { name: CONTACT_EMAIL }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole("link", { name: SUPPORT_EMAIL }).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/contact");
     expect(screen.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about");
     expect(document.body.textContent).not.toMatch(/nkd23@comcast\.net/i);

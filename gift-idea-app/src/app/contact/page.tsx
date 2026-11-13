@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { SiteFooter } from "@/components/SiteFooter";
-import { CONTACT_EMAIL, OPERATOR_LINE } from "@/lib/site";
+import { SUPPORT_EMAIL, OPERATOR_LINE } from "@/lib/site";
 
 export const metadata = {
   title: "Contact – Gifts4You",
@@ -25,8 +25,8 @@ export default function ContactPage() {
         <section>
           <h2 className="mb-2 text-xl font-semibold text-gray-900">Email</h2>
           <p>
-            <a className="text-violet-700 underline" href={`mailto:${CONTACT_EMAIL}`}>
-              {CONTACT_EMAIL}
+            <a className="text-violet-700 underline" href={`mailto:${SUPPORT_EMAIL}`}>
+              {SUPPORT_EMAIL}
             </a>
           </p>
         </section>
