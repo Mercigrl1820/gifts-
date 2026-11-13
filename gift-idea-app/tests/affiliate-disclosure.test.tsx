@@ -50,6 +50,13 @@ describe("Affiliate disclosure", () => {
     expect(notice.className).not.toMatch(/text-gray-400/);
     expect(notice.className).not.toMatch(/\bsr-only\b/);
     expect(notice.closest("footer")).not.toBeNull();
+    expect(screen.getByRole("link", { name: /privacy policy/i })).toHaveAttribute("href", "/privacy");
+    expect(screen.getByRole("link", { name: /terms of service/i })).toHaveAttribute("href", "/terms");
+    expect(screen.getByRole("link", { name: "hello@gifts4you.app" })).toHaveAttribute(
+      "href",
+      "mailto:hello@gifts4you.app",
+    );
+    expect(screen.getByText("Gifts4You is operated by Nicholas Daniel")).toBeInTheDocument();
   });
 
   it("shows the disclosure above product links on the results view", async () => {
@@ -64,30 +71,43 @@ describe("Affiliate disclosure", () => {
     await user.click(screen.getByRole("button", { name: /start finding gifts/i }));
     fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "Birthday" } });
     fireEvent.change(screen.getAllByRole("combobox")[1], { target: { value: "Friend" } });
+    await user.click(screen.getByRole("checkbox", { name: /18 or older/i }));
     await user.click(screen.getByRole("button", { name: /get gift ideas/i }));
 
     expect(await screen.findByRole("heading", { name: "Cozy Blanket" })).toBeInTheDocument();
 
-    const notice = screen.getByRole("note", { name: "Affiliate disclosure" });
+    const notice = screen.getAllByRole("note", { name: "Affiliate disclosure" }).find((item) => item.closest("footer") === null);
+    expect(notice).toBeTruthy();
     expect(notice).toHaveTextContent(GENERAL_AFFILIATE_DISCLOSURE);
     expect(notice).toHaveTextContent(AMAZON_ASSOCIATES_DISCLOSURE);
-    expect(notice.className).toMatch(/text-violet-950/);
-    expect(notice.className).not.toMatch(/text-xs|text-gray-400|sr-only/);
-    expect(notice.closest("footer")).toBeNull();
+    expect(notice?.className).toMatch(/text-violet-950/);
+    expect(notice?.className).not.toMatch(/text-xs|text-gray-400|sr-only/);
+    expect(screen.getByRole("contentinfo")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /terms of service/i })).toHaveAttribute("href", "/terms");
 
     const amazon = screen.getAllByRole("link", { name: /search on amazon/i })[0];
     const walmart = screen.getAllByRole("link", { name: /search on walmart/i })[0];
-    expect(precedes(notice, amazon)).toBe(true);
-    expect(precedes(notice, walmart)).toBe(true);
+    expect(precedes(notice as HTMLElement, amazon)).toBe(true);
+    expect(precedes(notice as HTMLElement, walmart)).toBe(true);
+    expect(amazon).toHaveAttribute("rel", "sponsored noopener noreferrer");
+    expect(walmart).toHaveAttribute("rel", "sponsored noopener noreferrer");
+    expect(amazon.className).not.toMatch(/amber/);
+    expect(walmart.className).not.toMatch(/blue/);
+    expect(screen.queryByText("$25–$40")).not.toBeInTheDocument();
   });
 
   it("keeps the privacy policy consistent with the shopper disclosure", () => {
     render(<PrivacyPage />);
 
-    expect(screen.getByRole("heading", { name: "5. Affiliate Links" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "10. Affiliate links" })).toBeInTheDocument();
+    expect(screen.getAllByText(/we may use affiliate links/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(GENERAL_AFFILIATE_DISCLOSURE).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(AMAZON_ASSOCIATES_DISCLOSURE, { exact: false }).length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText(/impact\.com partner network/i)).toBeInTheDocument();
-    expect(screen.getByText(/Walmart and Target/i)).toBeInTheDocument();
+    expect(screen.getAllByText(AMAZON_ASSOCIATES_DISCLOSURE, { exact: false }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/do not use Target or impact\.com links/i)).toBeInTheDocument();
+    expect(screen.queryByText(/impact\.com partner network/i)).not.toBeInTheDocument();
+    expect(screen.getAllByText("Gifts4You is operated by Nicholas Daniel").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole("link", { name: "hello@gifts4you.app" }).length).toBeGreaterThanOrEqual(1);
+    expect(document.body.textContent).not.toMatch(/nkd23@comcast\.net/i);
+    expect(document.body.textContent).not.toMatch(/GiftIdea \(/);
   });
 });

@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 import { isVisitorId } from "@/lib/public-visitor-id";
-import { readPaidCheckout, storeVerifiedPurchase } from "@/lib/record-purchase";
+import { readPaidCheckout, storeSubscriptionUpdate, storeVerifiedPurchase } from "@/lib/record-purchase";
+import { readSubscriptionSnapshot } from "@/lib/subscription-access";
 import { STRIPE_WEBHOOK_SECRET_ENV } from "@/lib/stripe-env";
 import { verifyStripeSignature } from "@/lib/stripe-signature";
 
 const PURCHASE_EVENTS = new Set([
   "checkout.session.completed",
   "checkout.session.async_payment_succeeded",
+]);
+
+const SUBSCRIPTION_EVENTS = new Set([
+  "customer.subscription.updated",
+  "customer.subscription.deleted",
 ]);
 
 function checkoutObject(event: unknown): unknown {
@@ -53,11 +59,26 @@ export async function POST(request: Request) {
     event && typeof event === "object" && "type" in event
       ? (event as { type?: unknown }).type
       : undefined;
-  if (typeof type !== "string" || !PURCHASE_EVENTS.has(type)) {
+  if (typeof type !== "string" || (!PURCHASE_EVENTS.has(type) && !SUBSCRIPTION_EVENTS.has(type))) {
     return NextResponse.json({ received: true }, { headers: { "Cache-Control": "no-store" } });
   }
 
   const session = checkoutObject(event);
+
+  if (SUBSCRIPTION_EVENTS.has(type)) {
+    const snapshot = readSubscriptionSnapshot(session);
+    if (!snapshot) {
+      return NextResponse.json({ received: true }, { headers: { "Cache-Control": "no-store" } });
+    }
+    const updated = await storeSubscriptionUpdate(snapshot);
+    if (updated === "unavailable") {
+      return NextResponse.json(
+        { received: false },
+        { status: 503, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    return NextResponse.json({ received: true }, { headers: { "Cache-Control": "no-store" } });
+  }
   const paymentStatus =
     session && typeof session === "object" && "payment_status" in session
       ? (session as { payment_status?: unknown }).payment_status

@@ -8,6 +8,8 @@ import {
 
 export type GenerateCompletion = (prompt: string) => Promise<string | null | undefined>;
 
+export const GENERATE_FAILURE_MESSAGE = "Could not generate gift ideas. Please try again.";
+
 export type GenerateResponseBody = { ideas: GiftIdea[] } | { error: string };
 
 export async function processGenerateRequest(
@@ -29,10 +31,6 @@ export async function processGenerateRequest(
     return { status: 200, body: { ideas } };
   } catch (error: unknown) {
     console.error("Error generating ideas:", error);
-    const message =
-      error instanceof Error && error.message
-        ? error.message
-        : "Failed to generate gift ideas";
-    return { status: 500, body: { error: message } };
+    return { status: 500, body: { error: GENERATE_FAILURE_MESSAGE } };
   }
 }

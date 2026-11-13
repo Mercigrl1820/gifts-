@@ -295,7 +295,7 @@ describe("enforceSearchLimit", () => {
     expect(fresh.cookie?.visitorId).not.toBe(first.cookie!.visitorId);
   });
 
-  it("rejects a tampered cookie and fails open when the secret, store, or Redis call is missing", async () => {
+  it("rejects a tampered cookie and fails closed when the secret, store, or Redis call is missing", async () => {
     const memory = memorySearchStore();
     const realId = crypto.randomUUID();
     const signed = await signVisitorCookie(realId, SECRET);
@@ -330,7 +330,7 @@ describe("enforceSearchLimit", () => {
       isLoadMore: false,
       now: DAY,
     });
-    expect(missingSecret).toMatchObject({ allowed: true, cookie: null });
+    expect(missingSecret).toMatchObject({ allowed: false, cookie: null, reason: "unavailable" });
 
     const missingStore = await enforceSearchLimit({
       store: null,
@@ -340,7 +340,8 @@ describe("enforceSearchLimit", () => {
       isLoadMore: false,
       now: DAY,
     });
-    expect(missingStore.allowed).toBe(true);
+    expect(missingStore.allowed).toBe(false);
+    expect(missingStore.reason).toBe("unavailable");
     expect(missingStore.cookie?.visitorId).toBeTruthy();
 
     memory.setFail(true);
@@ -352,10 +353,11 @@ describe("enforceSearchLimit", () => {
       isLoadMore: false,
       now: DAY,
     });
-    expect(down.allowed).toBe(true);
+    expect(down.allowed).toBe(false);
+    expect(down.reason).toBe("unavailable");
     expect(down.cookie?.visitorId).toBe(realId);
-    expect(warn.mock.calls.flat().join(" ")).toMatch(/Allowing searches/);
-    expect(warn.mock.calls.flat().join(" ")).toMatch(/Allowing this search/);
+    expect(warn.mock.calls.flat().join(" ")).toMatch(/Blocking searches/);
+    expect(warn.mock.calls.flat().join(" ")).toMatch(/Blocking this search/);
     warn.mockRestore();
   });
 });

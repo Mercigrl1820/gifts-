@@ -37,12 +37,19 @@ describe("Unlock codes and recipient form", () => {
 
   it("does not render the street address field", async () => {
     render(<Home />);
+    expect(screen.getByLabelText(/have an unlock code/i)).toBeInTheDocument();
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: /start finding gifts/i }));
 
     expect(screen.queryByText(/address \(optional\)/i)).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText(/street, city, state, zip/i)).not.toBeInTheDocument();
     expect(screen.getByText(/birthday \(optional\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/sent to an AI provider/i)).toBeInTheDocument();
+    expect(screen.getByText(/not for children under 13/i)).toBeInTheDocument();
+
+    await user.selectOptions(screen.getAllByRole("combobox")[3], "Under 18");
+    expect(screen.queryByText(/birthday \(optional\)/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/isn't collected for anyone under 18/i)).toBeInTheDocument();
   });
 
   it("loads a previously saved profile without restoring a street address", async () => {
@@ -69,7 +76,7 @@ describe("Unlock codes and recipient form", () => {
     render(<Home />);
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: /saved \(1\)/i }));
-    await user.click(screen.getByRole("button", { name: /sarah/i }));
+    await user.click(screen.getByRole("button", { name: /Friend/ }));
 
     expect(screen.getByDisplayValue("Sarah")).toBeInTheDocument();
     expect(screen.queryByDisplayValue("123 Main Street")).not.toBeInTheDocument();

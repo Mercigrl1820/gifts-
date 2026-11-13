@@ -72,7 +72,7 @@ Your app is now live!
 
 Each visitor can run a few gift searches for free. After that, the existing upgrade window opens with the message “You’ve used your 2 free searches.” The number follows the setting below. The count is kept on the server, so a private window or a cleared browser does not start the allowance over.
 
-The limit stays **off** until Redis and the cookie secret are set. Searches keep working, and the server logs a warning. Add these in the Vercel project (Preview first, then Production) before you expect the limit to turn on. Do not put the secret in the code, and do not commit it.
+Searches are **refused** until Redis and the cookie secret are set. The server logs a warning and the shopper sees a short “temporarily unavailable” message. Add these in the Vercel project (Preview first, then Production) before you expect searches to work. Do not put the secret in the code, and do not commit it.
 
 ### Required before the limit turns on
 
@@ -100,7 +100,7 @@ In the Stripe Dashboard:
 
 1. Open the pricing table and set the confirmation page to your site address. Stripe adds `session_id` when the shopper returns, which records the purchase.
 2. Add a webhook endpoint: `https://your-domain/api/stripe/webhook`
-3. Subscribe it to `checkout.session.completed` and `checkout.session.async_payment_succeeded`
+3. Subscribe it to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `customer.subscription.updated`, and `customer.subscription.deleted`
 4. Copy the webhook signing secret into `STRIPE_WEBHOOK_SECRET`, and the secret key into `STRIPE_SECRET_KEY`
 
 The pricing table sends the visitor’s anonymous id with the checkout. The site stores “paid” against that id after Stripe’s signature checks out. Shopper email addresses are not saved for this.
@@ -112,7 +112,7 @@ The pricing table sends the visitor’s anonymous id with the checkout. The site
 3. Run a third search. The upgrade window should open and say you’ve used your 2 free searches. No new ideas are generated for that click.
 4. “Load more gifts” on a result you already have should still work.
 5. Enter a valid unlock code (one already saved in `GIFT_UNLOCK_CODES`), then search again. Ideas should come back.
-6. Until the Redis variables and the cookie secret exist, the preview keeps allowing searches. That is intentional.
+6. Until the Redis variables and the cookie secret exist, a search is refused with a temporary-unavailable message. That is intentional. Once they are set, two searches work, and the third opens the upgrade window.
 
 ---
 

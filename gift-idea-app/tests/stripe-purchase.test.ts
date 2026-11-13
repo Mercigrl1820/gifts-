@@ -104,6 +104,97 @@ describe("Stripe purchase hook", () => {
     expect(mocks.track).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps subscription access through the paid period and drops it after that period ends", async () => {
+    const visitorId = crypto.randomUUID();
+    const future = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
+    const past = Math.floor(Date.now() / 1000) - 60;
+    const opened = JSON.stringify({
+      id: "evt_sub",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: "cs_test_sub1234567",
+          payment_status: "paid",
+          mode: "subscription",
+          client_reference_id: visitorId,
+          customer: "cus_test12345678",
+          subscription: {
+            id: "sub_test12345678",
+            customer: "cus_test12345678",
+            status: "active",
+            current_period_end: future,
+            cancel_at_period_end: false,
+          },
+        },
+      },
+    });
+    const openedHeader = stripeHeader(opened).header;
+    const accepted = await webhook(
+      new Request("https://preview.example/api/stripe/webhook", {
+        method: "POST",
+        headers: { "stripe-signature": openedHeader },
+        body: opened,
+      }),
+    );
+    expect(accepted.status).toBe(200);
+    expect(await mocks.store!.isUnlimited(visitorId)).toBe(true);
+    expect(await mocks.store!.readBillingCustomer(visitorId)).toBe("cus_test12345678");
+
+    const canceled = JSON.stringify({
+      id: "evt_cancel",
+      type: "customer.subscription.deleted",
+      data: {
+        object: {
+          id: "sub_test12345678",
+          customer: "cus_test12345678",
+          status: "canceled",
+          current_period_end: future,
+          cancel_at_period_end: true,
+        },
+      },
+    });
+    const canceledHeader = stripeHeader(canceled).header;
+    expect(
+      (
+        await webhook(
+          new Request("https://preview.example/api/stripe/webhook", {
+            method: "POST",
+            headers: { "stripe-signature": canceledHeader },
+            body: canceled,
+          }),
+        )
+      ).status,
+    ).toBe(200);
+    expect(await mocks.store!.isUnlimited(visitorId)).toBe(true);
+
+    const ended = JSON.stringify({
+      id: "evt_ended",
+      type: "customer.subscription.updated",
+      data: {
+        object: {
+          id: "sub_test12345678",
+          customer: "cus_test12345678",
+          status: "canceled",
+          current_period_end: past,
+          cancel_at_period_end: true,
+        },
+      },
+    });
+    const endedHeader = stripeHeader(ended).header;
+    expect(
+      (
+        await webhook(
+          new Request("https://preview.example/api/stripe/webhook", {
+            method: "POST",
+            headers: { "stripe-signature": endedHeader },
+            body: ended,
+          }),
+        )
+      ).status,
+    ).toBe(200);
+    expect(await mocks.store!.isUnlimited(visitorId)).toBe(false);
+  });
+
   it("confirms a paid session only for the signed visitor cookie", async () => {
     const visitorId = crypto.randomUUID();
     const otherId = crypto.randomUUID();

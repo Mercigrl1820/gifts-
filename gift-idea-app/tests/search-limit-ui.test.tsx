@@ -33,6 +33,7 @@ async function fillRequiredFields() {
   await user.click(screen.getByRole("button", { name: /start finding gifts/i }));
   fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "Birthday" } });
   fireEvent.change(screen.getAllByRole("combobox")[1], { target: { value: "Friend" } });
+  await user.click(screen.getByRole("checkbox", { name: /18 or older/i }));
   return user;
 }
 
@@ -43,7 +44,8 @@ describe("free search limit modal", () => {
     analyticsTrack.mockReset();
     pixel.mockReset();
     fetchMock.mockReset();
-    window.ttq = { load: vi.fn(), page: vi.fn(), track: pixel };
+    document.cookie = "gift_ads_consent=granted; Path=/";
+    window.ttq = { load: vi.fn(), page: vi.fn(), track: pixel, grantConsent: vi.fn(), holdConsent: vi.fn() };
     vi.stubGlobal("fetch", fetchMock);
     window.history.pushState({}, "", "/");
   });
@@ -62,6 +64,17 @@ describe("free search limit modal", () => {
 
     expect(await screen.findByRole("dialog", { name: /upgrade your plan/i })).toBeInTheDocument();
     expect(screen.getByText("You've used your 2 free searches.")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "$0.99 one-time" })).toBeInTheDocument();
+    expect(screen.getByText(/does not renew/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "$6.99 every 6 months" })).toBeInTheDocument();
+    expect(screen.getByText(/renews automatically every 6 months/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/We'll email you before your plan renews/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: "$12.99 yearly" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /manage or cancel subscription/i }).length).toBeGreaterThan(0);
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.contains(document.activeElement)).toBe(true);
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.queryByText(/something went wrong/i)).not.toBeInTheDocument();
     expect(analyticsTrack).toHaveBeenCalledWith("limit_hit", { limit: 2 });
     expect(analyticsTrack).toHaveBeenCalledWith("pricing_modal_opened", { reason: "search_limit" });

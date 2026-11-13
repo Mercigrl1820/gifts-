@@ -1,10 +1,15 @@
 /**
  * @vitest-environment node
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
+  store: null as ReturnType<typeof import("./memory-search-store").memorySearchStore>["store"] | null,
+}));
+
+vi.mock("@/lib/search-limit-store", () => ({
+  createSearchLimitStore: () => mocks.store,
 }));
 
 vi.mock("openai", () => {
@@ -20,7 +25,9 @@ vi.mock("openai", () => {
 });
 
 import { POST } from "../src/app/api/generate/route";
+import { VISITOR_COOKIE_SECRET_ENV } from "../src/lib/search-limit-config";
 import { idea } from "./fixtures";
+import { memorySearchStore } from "./memory-search-store";
 
 function request(body: unknown) {
   return new Request("http://localhost/api/generate", {
@@ -33,7 +40,13 @@ function request(body: unknown) {
 describe("POST /api/generate", () => {
   beforeEach(() => {
     mocks.create.mockReset();
+    mocks.store = memorySearchStore().store;
+    vi.stubEnv(VISITOR_COOKIE_SECRET_ENV, "test-cookie-secret-value");
     delete process.env.OPENAI_API_KEY;
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it("does not call the model for invalid JSON or invalid fields", async () => {
@@ -121,5 +134,28 @@ describe("POST /api/generate", () => {
     expect(mocks.create.mock.calls[0][0].messages[0].content).toBe(
       "You are a helpful gift recommendation assistant. Always respond with valid JSON only."
     );
+  });
+
+  it("fails closed without Redis or the cookie secret and does not call the model", async () => {
+    mocks.create.mockResolvedValue({
+      choices: [{ message: { content: JSON.stringify({ ideas: [idea("Cozy Blanket")] }) } }],
+    });
+    const body = { occasion: "Birthday", relationship: "Friend", interests: "hiking" };
+
+    mocks.store = null;
+    const missingStore = await POST(request(body));
+    expect(missingStore.status).toBe(503);
+    await expect(missingStore.json()).resolves.toEqual({
+      error: "Gift search is temporarily unavailable. Please try again later.",
+    });
+
+    mocks.store = memorySearchStore().store;
+    vi.stubEnv(VISITOR_COOKIE_SECRET_ENV, "");
+    const missingSecret = await POST(request(body));
+    expect(missingSecret.status).toBe(503);
+    const payload = await missingSecret.json();
+    expect(payload.error).toBe("Gift search is temporarily unavailable. Please try again later.");
+    expect(JSON.stringify(payload)).not.toMatch(/redis|secret|OpenAI/i);
+    expect(mocks.create).not.toHaveBeenCalled();
   });
 });

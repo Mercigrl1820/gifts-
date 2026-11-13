@@ -121,21 +121,24 @@ describe("POST /api/generate search limit", () => {
     expect(mocks.create).toHaveBeenCalledTimes(3);
   });
 
-  it("fails open when the cookie secret or the store is missing", async () => {
+  it("fails closed when the cookie secret or the store is missing", async () => {
     vi.stubEnv(VISITOR_COOKIE_SECRET_ENV, "");
     mocks.create.mockResolvedValue({
       choices: [{ message: { content: JSON.stringify({ ideas: [idea("Trail Map")] }) } }],
     });
 
     const response = await generate(generateRequest(search));
-    expect(response.status).toBe(200);
-    expect(mocks.create).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: "Gift search is temporarily unavailable. Please try again later.",
+    });
+    expect(mocks.create).not.toHaveBeenCalled();
 
     vi.stubEnv(VISITOR_COOKIE_SECRET_ENV, SECRET);
     mocks.store = null;
-    const open = await generate(generateRequest(search));
-    expect(open.status).toBe(200);
-    expect(mocks.create).toHaveBeenCalledTimes(2);
+    const blocked = await generate(generateRequest(search));
+    expect(blocked.status).toBe(503);
+    expect(mocks.create).not.toHaveBeenCalled();
   });
 
   it("stores a valid unlock against the visitor and then skips the limit", async () => {

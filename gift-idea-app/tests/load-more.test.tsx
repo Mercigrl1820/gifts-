@@ -58,6 +58,7 @@ async function startSearch(interests = "hiking and coffee") {
   const date = document.querySelector('input[type="date"]');
   if (!date) throw new Error("Missing birthday field");
   fireEvent.change(date, { target: { value: "1990-05-01" } });
+  await user.click(screen.getByRole("checkbox", { name: /18 or older/i }));
   return user;
 }
 

@@ -8,6 +8,7 @@ import "@testing-library/jest-dom/vitest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Home from "../src/app/page";
 import RootLayout from "../src/app/layout";
+import { resetTikTokConsentForTests, writeAdsConsent } from "../src/lib/tiktok";
 import { idea, jsonResponse } from "./fixtures";
 
 vi.mock("../src/app/globals.css", () => ({}));
@@ -49,10 +50,15 @@ describe("TikTok pixel install and events", () => {
   beforeEach(() => {
     localStorage.clear();
     track.mockReset();
+    document.cookie = "gift_ads_consent=; Path=/; Max-Age=0";
+    resetTikTokConsentForTests();
     window.ttq = {
       load: vi.fn(),
       page: vi.fn(),
       track,
+      holdConsent: vi.fn(),
+      grantConsent: vi.fn(),
+      revokeConsent: vi.fn(),
     };
     fetchMock.mockReset();
     fetchMock.mockResolvedValue(jsonResponse({ ideas: [idea("Cozy Blanket"), idea("Trail Map")] }));
@@ -75,9 +81,56 @@ describe("TikTok pixel install and events", () => {
     expect(script).not.toBeNull();
     expect(script).toHaveAttribute("data-strategy", "afterInteractive");
     const code = script?.textContent ?? "";
+    expect(code).toContain("ttq.holdConsent();");
+    expect(code).toContain("globalPrivacyControl");
     expect(code).toContain("ttq.load('DBPIPN3C77U4J2JR7E1G');");
     expect(code).toContain("ttq.page();");
-    expect(code.indexOf("ttq.load(")).toBeLessThan(code.indexOf("ttq.page();"));
+    expect(code.indexOf("ttq.holdConsent();")).toBeLessThan(code.indexOf("ttq.load('DBPIPN3C77U4J2JR7E1G');"));
+    expect(code.indexOf('choice === "granted"')).toBeLessThan(code.indexOf("ttq.load('DBPIPN3C77U4J2JR7E1G');"));
+    expect(screen.getByRole("button", { name: "Accept" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Decline" })).toBeInTheDocument();
+  });
+
+  it("does not load the pixel until the visitor accepts, and keeps it off after decline or GPC", async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(
+      <RootLayout>
+        <div>app</div>
+      </RootLayout>,
+    );
+
+    expect(window.ttq?.load).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Decline" }));
+    expect(screen.queryByRole("button", { name: "Accept" })).not.toBeInTheDocument();
+    expect(window.ttq?.load).not.toHaveBeenCalled();
+    expect(window.ttq?.grantConsent).not.toHaveBeenCalled();
+
+    unmount();
+    resetTikTokConsentForTests();
+    window.__giftsTikTokLoaded = false;
+    document.cookie = "gift_ads_consent=; Path=/; Max-Age=0";
+    render(
+      <RootLayout>
+        <div>app</div>
+      </RootLayout>,
+    );
+    await user.click(screen.getByRole("button", { name: "Accept" }));
+    expect(window.ttq?.grantConsent).toHaveBeenCalled();
+    expect(window.ttq?.load).toHaveBeenCalledWith("DBPIPN3C77U4J2JR7E1G");
+    expect(window.ttq?.page).toHaveBeenCalled();
+
+    cleanup();
+    resetTikTokConsentForTests();
+    window.__giftsTikTokLoaded = false;
+    Object.defineProperty(navigator, "globalPrivacyControl", { configurable: true, value: true });
+    render(
+      <RootLayout>
+        <div>app</div>
+      </RootLayout>,
+    );
+    expect(screen.queryByRole("button", { name: "Accept" })).not.toBeInTheDocument();
+    expect(window.ttq?.load).toHaveBeenCalledTimes(1);
+    Object.defineProperty(navigator, "globalPrivacyControl", { configurable: true, value: undefined });
   });
 
   it("tracks Search on quiz submit without personal free text, then retailer clicks", async () => {
@@ -95,6 +148,8 @@ describe("TikTok pixel install and events", () => {
     fireEvent.change(screen.getByPlaceholderText(/loves cooking/i), {
       target: { value: "hiking and coffee" },
     });
+    writeAdsConsent("granted");
+    await user.click(screen.getByRole("checkbox", { name: /18 or older/i }));
 
     await user.click(screen.getByRole("button", { name: /get gift ideas/i }));
     expect(await screen.findByRole("heading", { name: "Cozy Blanket" })).toBeInTheDocument();
@@ -130,6 +185,8 @@ describe("TikTok pixel install and events", () => {
     await user.click(screen.getByRole("button", { name: /start finding gifts/i }));
     fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "Christmas" } });
     fireEvent.change(screen.getAllByRole("combobox")[1], { target: { value: "Parent" } });
+    writeAdsConsent("granted");
+    await user.click(screen.getByRole("checkbox", { name: /18 or older/i }));
     await user.click(screen.getByRole("button", { name: /get gift ideas/i }));
 
     expect(await screen.findByRole("heading", { name: "Cozy Blanket" })).toBeInTheDocument();

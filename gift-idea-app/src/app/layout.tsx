@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ConsentBanner } from "@/components/ConsentBanner";
 import { tiktokPixelBaseCode } from "@/lib/tiktok";
 import "./globals.css";
 
@@ -24,6 +25,7 @@ export default function RootLayout({
         <Script id="tiktok-pixel" strategy="afterInteractive">
           {tiktokPixelBaseCode()}
         </Script>
+        <ConsentBanner />
         {children}
         <Analytics />
         <SpeedInsights />

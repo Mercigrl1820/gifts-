@@ -4,29 +4,39 @@ import {
   VISITOR_COOKIE_SECRET_ENV,
   type SearchLimitConfig,
 } from "@/lib/search-limit-config";
+import type { SubscriptionSnapshot } from "@/lib/subscription-access";
 import { redisSetupWarning } from "@/lib/redis-env";
 import { warnOnce } from "@/lib/warn-once";
 
 /**
  * Search allowance stored in Upstash Redis.
- * When Redis or the cookie secret is missing, enforceSearchLimit allows the
- * request and logs a warning so a deploy before setup does not take the site down.
+ * When Redis or the cookie secret is missing, or a counter update throws,
+ * enforceSearchLimit refuses the search. The free allowance itself is unchanged
+ * when both are configured: 2 searches that do not reset, then the upgrade window.
  */
 export interface SearchLimitStore {
   isUnlimited(visitorId: string): Promise<boolean>;
   grantUnlimited(visitorId: string, source: "unlock" | "purchase"): Promise<void>;
   increment(key: string, ttlSeconds: number | null): Promise<number>;
   claimPurchaseEvent(sessionId: string): Promise<boolean>;
+  saveBillingCustomer(visitorId: string, customerId: string): Promise<void>;
+  readBillingCustomer(visitorId: string): Promise<string | null>;
+  readVisitorByCustomer(customerId: string): Promise<string | null>;
+  saveSubscription(visitorId: string, snapshot: SubscriptionSnapshot): Promise<void>;
+  readSubscription(visitorId: string): Promise<SubscriptionSnapshot | null>;
 }
 
 /** Dated counters expire after three days. A "never" visitor counter has no TTL. */
 export const SEARCH_COUNTER_TTL_SECONDS = 3 * 24 * 60 * 60;
 
+export const SEARCH_UNAVAILABLE_MESSAGE =
+  "Gift search is temporarily unavailable. Please try again later.";
+
 export type SearchLimitDecision = {
   allowed: boolean;
   limit: number;
   cookie: VisitorCookie | null;
-  reason: "visitor" | "ip" | null;
+  reason: "visitor" | "ip" | "unavailable" | null;
 };
 
 export function utcDay(date: Date): string {
@@ -72,19 +82,25 @@ export async function enforceSearchLimit(input: {
     cookie,
     reason: null,
   });
+  const unavailable = (cookie: VisitorCookie | null): SearchLimitDecision => ({
+    allowed: false,
+    limit,
+    cookie,
+    reason: "unavailable",
+  });
 
   if (!input.config.cookieSecret) {
     warnOnce(
-      `[search-limit] ${VISITOR_COOKIE_SECRET_ENV} is missing or shorter than 16 characters. Allowing searches.`,
+      `[search-limit] ${VISITOR_COOKIE_SECRET_ENV} is missing or shorter than 16 characters. Blocking searches.`,
     );
-    return allow(null);
+    return unavailable(null);
   }
 
   const cookie = await resolveVisitor(input.cookieHeader, input.config.cookieSecret);
 
   if (!input.store) {
     warnOnce(redisSetupWarning());
-    return allow(cookie);
+    return unavailable(cookie);
   }
 
   try {
@@ -115,7 +131,7 @@ export async function enforceSearchLimit(input: {
 
     return allow(cookie);
   } catch {
-    warnOnce("[search-limit] Could not update the search counter. Allowing this search.");
-    return allow(cookie);
+    warnOnce("[search-limit] Could not update the search counter. Blocking this search.");
+    return unavailable(cookie);
   }
 }
