@@ -6,7 +6,7 @@ import {
   AMAZON_ASSOCIATES_DISCLOSURE,
   GENERAL_AFFILIATE_DISCLOSURE,
 } from "@/lib/affiliate-disclosure";
-import { CONTACT_EMAIL, OPERATOR_LEGAL_NAME, OPERATOR_LINE } from "@/lib/site";
+import { SUPPORT_EMAIL, OPERATOR_LEGAL_NAME, OPERATOR_LINE } from "@/lib/site";
 
 export const metadata = {
   title: "Privacy Policy – Gifts4You",
@@ -143,8 +143,8 @@ export default function PrivacyPage() {
           <p>{OPERATOR_LINE}.</p>
           <p className="mt-2">
             Questions about this policy:{" "}
-            <a className="text-violet-700 underline" href={`mailto:${CONTACT_EMAIL}`}>
-              {CONTACT_EMAIL}
+            <a className="text-violet-700 underline" href={`mailto:${SUPPORT_EMAIL}`}>
+              {SUPPORT_EMAIL}
             </a>
           </p>
         </section>

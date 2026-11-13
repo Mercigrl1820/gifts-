@@ -10,7 +10,7 @@ import {
   WHAT_IS_SOLD,
   YEARLY_DISCLOSURE,
 } from "@/lib/plan-terms";
-import { CONTACT_EMAIL, OPERATOR_LEGAL_NAME, OPERATOR_LINE } from "@/lib/site";
+import { SUPPORT_EMAIL, OPERATOR_LEGAL_NAME, OPERATOR_LINE } from "@/lib/site";
 
 export const metadata = {
   title: "Terms of Service – Gifts4You",
@@ -72,7 +72,11 @@ export default function TermsPage() {
         <section>
           <h2 className="mb-2 text-xl font-semibold text-gray-900">5. How to cancel</h2>
           <p>
-            You can cancel a renewing plan online, on this website, without calling us. Use Manage or cancel subscription. It is on every page, including this one, and in the upgrade window next to checkout. That opens Stripe&apos;s billing page for the browser you used to pay, where you can cancel. You can also use the link in your Stripe receipt, or email {CONTACT_EMAIL} and we will cancel the plan.
+            You can cancel a renewing plan online, on this website, without calling us. Use Manage or cancel subscription. It is on every page, including this one, and in the upgrade window next to checkout. That opens Stripe&apos;s billing page for the browser you used to pay, where you can cancel. You can also use the link in your Stripe receipt, or email{" "}
+            <a className="text-violet-700 underline" href={`mailto:${SUPPORT_EMAIL}`}>
+              {SUPPORT_EMAIL}
+            </a>{" "}
+            and we will cancel the plan.
           </p>
           <p className="mt-2">
             The $0.99 plan does not renew, so there is no renewal to cancel. Access from that one-time purchase stays on the browser you used to pay.
@@ -128,8 +132,8 @@ export default function TermsPage() {
           <h2 className="mb-2 text-xl font-semibold text-gray-900">12. Contact</h2>
           <p>{OPERATOR_LINE}.</p>
           <p className="mt-2">
-            <a className="text-violet-700 underline" href={`mailto:${CONTACT_EMAIL}`}>
-              {CONTACT_EMAIL}
+            <a className="text-violet-700 underline" href={`mailto:${SUPPORT_EMAIL}`}>
+              {SUPPORT_EMAIL}
             </a>
           </p>
         </section>

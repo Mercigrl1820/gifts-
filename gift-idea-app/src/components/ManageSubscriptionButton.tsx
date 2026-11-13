@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { CONTACT_EMAIL } from "@/lib/site";
+import { SUPPORT_EMAIL } from "@/lib/site";
 
-const FALLBACK = `We couldn't open the billing page. Email ${CONTACT_EMAIL} and we will cancel the plan.`;
+const FALLBACK = `We couldn't open the billing page. Email ${SUPPORT_EMAIL} and we will cancel the plan.`;
 
 export function ManageSubscriptionButton({ prominent = false }: { prominent?: boolean }) {
   const [pending, setPending] = useState(false);

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { createSearchLimitStore } from "@/lib/search-limit-store";
 import { readSearchLimitConfig } from "@/lib/search-limit-config";
-import { CONTACT_EMAIL } from "@/lib/site";
+import { SUPPORT_EMAIL } from "@/lib/site";
 import { STRIPE_SECRET_KEY_ENV } from "@/lib/stripe-env";
 import { CUSTOMER_ID_PATTERN } from "@/lib/subscription-access";
 import { resolveVisitor } from "@/lib/visitor-cookie";
 
-const EMAIL_FALLBACK = `We couldn't open the billing page. Email ${CONTACT_EMAIL} and we will cancel the plan.`;
-const NO_PLAN = `We don't have a paid plan saved on this browser. Email ${CONTACT_EMAIL} from the address you used at checkout and we will cancel it.`;
+const EMAIL_FALLBACK = `We couldn't open the billing page. Email ${SUPPORT_EMAIL} and we will cancel the plan.`;
+const NO_PLAN = `We don't have a paid plan saved on this browser. Email ${SUPPORT_EMAIL} from the address you used at checkout and we will cancel it.`;
 
 function portalError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status, headers: { "Cache-Control": "no-store" } });
